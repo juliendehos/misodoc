@@ -6,7 +6,6 @@ A Miso app that generates a documentation from MD files (inspired by
 
 ## TODO
 
-- fetch summary.md + generate links
 - detect internal links and convert them to miso actions
 - render all mardown node types
 - multi-level summary
