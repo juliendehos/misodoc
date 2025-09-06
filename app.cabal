@@ -1,0 +1,36 @@
+cabal-version:    3.0
+name:             misodoc
+version:          0.1
+
+common options
+  default-language:
+    GHC2021
+  default-extensions:
+    CPP
+    TemplateHaskell 
+
+  if arch(wasm32)
+    ghc-options:
+      -Wall -O2 -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start" -ddump-splices
+    cpp-options:
+      -DWASM
+  else
+    ghc-options:
+      -Wall -O2 -ddump-splices
+
+executable app
+  import:
+    options
+  hs-source-dirs:
+    src
+  main-is:
+    Main.hs
+  other-modules:
+    Component
+    Helpers
+    Model
+  build-depends:
+    base,
+    cmark,
+    miso
+
