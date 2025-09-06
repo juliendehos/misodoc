@@ -38,6 +38,14 @@ updateModel (ActionAskMd fp) =
 updateModel (ActionSetMd str) =
   modelPage .= str
 
+updateModel (ActionAskSummary fp) =
+  pure ()
+  -- TODO
+  -- getText fp [] ActionSetMd ActionError
+
+updateModel (ActionSetSummary str) =
+  modelSummary .= str
+
 -------------------------------------------------------------------------------
 -- view
 -------------------------------------------------------------------------------
