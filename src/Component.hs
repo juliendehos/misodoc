@@ -60,17 +60,9 @@ viewModel m =
     ]
 
 viewSummary :: Model -> View Model Action
-viewSummary m = 
+viewSummary Model{..} = 
   div_ [ CSS.style_ [ CSS.paddingRight "20px" ] ]
     [ h2_ [] [ "Summary" ]
-    , p_ [] [ "foo bar" ]
-    ]
-
-viewPage :: Model -> View Model Action
-viewPage Model{..} = 
-  div_ []
-    ([ h2_ [] [ "the page" ]
-    , p_ [] [ text _modelError ]
     , p_ [] [ a_ 
                 [ onClick (ActionAskMd "page1.md")
                 , CSS.style_ 
@@ -83,17 +75,21 @@ viewPage Model{..} =
             ]
     , p_ [] [ button_ [ onClick (ActionAskMd "page1.md") ] [ "fetch page 1" ] ]
     , p_ [] [ button_ [ onClick (ActionAskMd "page2.md") ] [ "fetch page 2" ] ]
-    ] ++ fmtPage)
+    , p_ [] [ text _modelError ]
+    ]
+
+viewPage :: Model -> View Model Action
+viewPage Model{..} = 
+  div_ []
+    fmtPage
 
   where
     fmtPage
       | MS.null _modelPage = []
       | otherwise =
-          [ hr_ []
-          , renderMd _modelPage
+          [ renderMd _modelPage
           , hr_ []
           , p_ [] [ renderRaw _modelPage ]
-          , hr_ []
           ]
 
 -------------------------------------------------------------------------------
