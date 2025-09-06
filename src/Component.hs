@@ -1,13 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Component (mkComponent) where
 
 import Miso
+import Miso.CSS as CSS
 import Miso.Lens
 import Miso.Html.Element as H
 import Miso.Html.Event as E
-import Miso.Html.Property as P
-import Miso.CSS as CSS
+-- import Miso.Html.Property as P
+import Miso.String as MS
 
 import Helpers
 import Model
@@ -51,9 +53,24 @@ updateModel (ActionSetSummary str) =
 -------------------------------------------------------------------------------
 
 viewModel :: Model -> View Model Action
-viewModel m = 
+viewModel m =
+  div_ [ CSS.style_ [ CSS.display "flex", CSS.flexDirection "row" ] ]
+    [ viewSummary m
+    , viewPage m
+    ]
+
+viewSummary :: Model -> View Model Action
+viewSummary m = 
+  div_ [ CSS.style_ [ CSS.paddingRight "20px" ] ]
+    [ h2_ [] [ "Summary" ]
+    , p_ [] [ "foo bar" ]
+    ]
+
+viewPage :: Model -> View Model Action
+viewPage Model{..} = 
   div_ []
-    [ p_ [] [ text (m ^. modelError) ]
+    ([ h2_ [] [ "the page" ]
+    , p_ [] [ text _modelError ]
     , p_ [] [ a_ 
                 [ onClick (ActionAskMd "page1.md")
                 , CSS.style_ 
@@ -66,9 +83,18 @@ viewModel m =
             ]
     , p_ [] [ button_ [ onClick (ActionAskMd "page1.md") ] [ "fetch page 1" ] ]
     , p_ [] [ button_ [ onClick (ActionAskMd "page2.md") ] [ "fetch page 2" ] ]
-    , renderMd (m ^. modelPage)
-    , p_ [] [ renderRaw (m ^. modelPage) ]
-    ]
+    ] ++ fmtPage)
+
+  where
+    fmtPage
+      | MS.null _modelPage = []
+      | otherwise =
+          [ hr_ []
+          , renderMd _modelPage
+          , hr_ []
+          , p_ [] [ renderRaw _modelPage ]
+          , hr_ []
+          ]
 
 -------------------------------------------------------------------------------
 -- component
