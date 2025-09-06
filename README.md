@@ -1,6 +1,7 @@
 # misodoc
 
-Miso app that generates a documentation from MD files.
+A Miso app that generates a documentation from MD files (inspired by
+[mdBook](https://rust-lang.github.io/mdBook/)).
 
 
 ## setup
