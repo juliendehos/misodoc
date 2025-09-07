@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Component (mkComponent) where
 
 import Miso
@@ -9,7 +11,7 @@ import Miso.Lens
 import Miso.Html.Element as H
 -- import Miso.Html.Event as E
 -- import Miso.Html.Property as P
-import Miso.String qualified as MS
+-- import Miso.String qualified as MS
 
 import Action
 import Helpers
@@ -28,38 +30,44 @@ updateModel (ActionAskMd fp) =
   getText fp [] ActionSetMd ActionError
 
 updateModel (ActionSetMd str) =
-  modelPage .= 
-    div_ 
-      []
-      [ renderPage str
-      , hr_ []
-      , p_ [] [ "MD Tree:" ]
-      , p_ [] [ renderRaw str ]
-      ]
+  modelPage .= renderNode str
 
 updateModel (ActionAskSummary fp) =
   getText fp [] ActionSetSummary ActionError
 
 updateModel (ActionSetSummary str) = do
-  err <- use modelError
-  modelSummary .= 
-    div_ 
-      [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
-      [ h2_ [] [ "Summary" ]
-      , renderSummary str
-      , p_ [] [ text err ]
-      ]
+  modelSummary .= renderNode str
 
 -------------------------------------------------------------------------------
 -- view
 -------------------------------------------------------------------------------
 
 viewModel :: Model -> View Model Action
-viewModel Model{..} =
+viewModel m =
   div_ [ CSS.style_ [ CSS.display "flex", CSS.flexDirection "row" ] ]
-    [ _modelSummary
-    , _modelPage
+    [ viewSummary m
+    , viewPage m
     ]
+
+viewSummary :: Model -> View Model Action
+viewSummary Model{..} = 
+  div_ 
+    [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
+    [ h2_ [] [ "Summary" ]
+    , renderSummary _modelSummary
+    , p_ [] [ text _modelError ]
+    ]
+
+viewPage :: Model -> View Model Action
+viewPage Model{..} = div_ [] ( renderPage _modelPage : viewRaw )
+  where
+    viewRaw
+      | _modelPage == emptyNode = []
+      | otherwise = 
+          [ hr_ []
+          , p_ [] [ "MD Tree:" ]
+          , p_ [] [ renderRaw _modelPage ]
+          ]
 
 -------------------------------------------------------------------------------
 -- component

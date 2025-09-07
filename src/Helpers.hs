@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Helpers 
-  ( renderPage
+  ( renderNode
+  , renderPage
   , renderRaw
   , renderSummary
   ) where
@@ -20,54 +21,48 @@ import Action
 -- export
 -------------------------------------------------------------------------------
 
-renderRaw :: MisoString -> View m a
-renderRaw = renderNodeRaw . commonmarkToNode [] . fromMisoString
+renderNode :: MisoString -> Node
+renderNode = commonmarkToNode [] . fromMisoString
 
-renderPage :: MisoString -> View m Action
-renderPage = renderNodePage . commonmarkToNode [] . fromMisoString
+renderRaw :: Node -> View m a
+renderRaw n = div_ [] [ text (ms (show n)) ]
 
-renderSummary :: MisoString -> View m Action
-renderSummary = renderNodeSummary . commonmarkToNode [] . fromMisoString
-
--------------------------------------------------------------------------------
--- internal
--------------------------------------------------------------------------------
-
-renderNodeRaw :: Node -> View m a
-renderNodeRaw n = div_ [] [ text (ms (show n)) ]
-
-renderNodePage :: Node -> View m Action
-renderNodePage = \case
-  Node _ DOCUMENT ns -> div_ [] (fmap renderNodePage ns)
+renderPage :: Node -> View m Action
+renderPage = \case
+  Node _ DOCUMENT ns -> div_ [] (fmap renderPage ns)
   Node _ THEMATIC_BREAK ns -> hr_ []
-  Node _ PARAGRAPH ns -> p_ [] (fmap renderNodePage ns)
-  Node _ BLOCK_QUOTE ns -> pre_ [] (fmap renderNodePage ns)
+  Node _ PARAGRAPH ns -> p_ [] (fmap renderPage ns)
+  Node _ BLOCK_QUOTE ns -> pre_ [] (fmap renderPage ns)
   Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO" ]
-  Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap renderNodePage ns)
-  Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap renderNodePage ns)
-  Node _ (HEADING x) ns -> fmtH x [] (fmap renderNodePage ns)
-  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderNodePage ns)
-  Node _ ITEM ns -> li_ [] (fmap renderNodePage ns)
-  Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderNodePage ns)
+  Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap renderPage ns)
+  Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap renderPage ns)
+  Node _ (HEADING x) ns -> fmtH x [] (fmap renderPage ns)
+  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderPage ns)
+  Node _ ITEM ns -> li_ [] (fmap renderPage ns)
+  Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderPage ns)
   Node _ SOFTBREAK ns -> span_ [] [ "TODO" ]
   Node _ LINEBREAK ns -> span_ [] [ "TODO" ]
   Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO" ]
   Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO" ]
-  Node _ (CODE txt) ns -> span_ [] (fmap renderNodePage ns)   -- TODO language + highlightjs
-  Node _ EMPH ns -> em_ [] (fmap renderNodePage ns)
-  Node _ STRONG ns -> strong_ [] (fmap renderNodePage ns)
-  Node _ (LINK u t) ns -> a_ [ href_ (ms u) ] (text (ms t) : fmap renderNodePage ns)
-  Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap renderNodePage ns)
+  Node _ (CODE txt) ns -> span_ [] (fmap renderPage ns)   -- TODO language + highlightjs
+  Node _ EMPH ns -> em_ [] (fmap renderPage ns)
+  Node _ STRONG ns -> strong_ [] (fmap renderPage ns)
+  Node _ (LINK u t) ns -> a_ [ href_ (ms u) ] (text (ms t) : fmap renderPage ns)
+  Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap renderPage ns)
 
-renderNodeSummary :: Node -> View m Action
-renderNodeSummary = \case
-  Node _ DOCUMENT ns -> div_ [] (fmap renderNodeSummary ns)
-  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderNodeSummary ns)
-  Node _ PARAGRAPH ns -> span_ [] (fmap renderNodeSummary ns)
-  Node _ ITEM ns -> li_ [] (fmap renderNodeSummary ns)
-  Node _ (LINK u t) ns -> fmtInternalLink (ms u) (text (ms t) : fmap renderNodeSummary ns) 
-  Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderNodeSummary ns)
+renderSummary :: Node -> View m Action
+renderSummary = \case
+  Node _ DOCUMENT ns -> div_ [] (fmap renderSummary ns)
+  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderSummary ns)
+  Node _ PARAGRAPH ns -> span_ [] (fmap renderSummary ns)
+  Node _ ITEM ns -> li_ [] (fmap renderSummary ns)
+  Node _ (LINK u t) ns -> fmtInternalLink (ms u) (text (ms t) : fmap renderSummary ns) 
+  Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderSummary ns)
   _ -> span_ [] []
+
+-------------------------------------------------------------------------------
+-- internal
+-------------------------------------------------------------------------------
 
 fmtInternalLink :: MisoString -> [View model Action] -> View model Action
 fmtInternalLink u =
