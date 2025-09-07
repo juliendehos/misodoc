@@ -39,30 +39,30 @@ renderNodeRaw n = div_ [] [ text (ms (show n)) ]
 renderNodePage :: Node -> View m Action
 renderNodePage = \case
   Node _ DOCUMENT ns -> div_ [] (fmap renderNodePage ns)
-  Node _ THEMATIC_BREAK ns -> span_ [] [ "TODO" ]
+  Node _ THEMATIC_BREAK ns -> hr_ []
   Node _ PARAGRAPH ns -> p_ [] (fmap renderNodePage ns)
-  Node _ BLOCK_QUOTE ns -> span_ [] [ "TODO" ]
+  Node _ BLOCK_QUOTE ns -> pre_ [] (fmap renderNodePage ns)
   Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO" ]
-  Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] [ "TODO" ]
-  Node _ (CODE_BLOCK info txt) ns -> span_ [] [ "TODO" ]
+  Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap renderNodePage ns)
+  Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap renderNodePage ns)
   Node _ (HEADING x) ns -> fmtH x [] (fmap renderNodePage ns)
-  Node _ (LIST attrs) ns -> span_ [] [ "TODO" ]
-  Node _ ITEM ns -> span_ [] [ "TODO" ]
+  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderNodePage ns)
+  Node _ ITEM ns -> li_ [] (fmap renderNodePage ns)
   Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderNodePage ns)
   Node _ SOFTBREAK ns -> span_ [] [ "TODO" ]
   Node _ LINEBREAK ns -> span_ [] [ "TODO" ]
   Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO" ]
   Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO" ]
-  Node _ (CODE txt) ns -> span_ [] [ "TODO" ]
-  Node _ EMPH ns -> span_ [] [ "TODO" ]
-  Node _ STRONG ns -> span_ [] [ "TODO" ]
+  Node _ (CODE txt) ns -> span_ [] (fmap renderNodePage ns)   -- TODO language + highlightjs
+  Node _ EMPH ns -> em_ [] (fmap renderNodePage ns)
+  Node _ STRONG ns -> strong_ [] (fmap renderNodePage ns)
   Node _ (LINK u t) ns -> a_ [ href_ (ms u) ] (text (ms t) : fmap renderNodePage ns)
   Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap renderNodePage ns)
 
 renderNodeSummary :: Node -> View m Action
 renderNodeSummary = \case
   Node _ DOCUMENT ns -> div_ [] (fmap renderNodeSummary ns)
-  Node _ (LIST _) ns -> ul_ [] (fmap renderNodeSummary ns)
+  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderNodeSummary ns)
   Node _ PARAGRAPH ns -> span_ [] (fmap renderNodeSummary ns)
   Node _ ITEM ns -> li_ [] (fmap renderNodeSummary ns)
   Node _ (LINK u t) ns -> fmtInternalLink (ms u) (text (ms t) : fmap renderNodeSummary ns) 
@@ -88,4 +88,9 @@ fmtH = \case
   4 -> h4_
   5 -> h5_
   _ -> h6_
+
+fmtListAttrs :: ListAttributes -> [Attribute action] -> [View model action] -> View model action
+fmtListAttrs attrs = case listType attrs of
+  BULLET_LIST -> ul_
+  ORDERED_LIST -> ol_
 

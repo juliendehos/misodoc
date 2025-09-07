@@ -7,7 +7,7 @@ import Miso
 import Miso.CSS as CSS
 import Miso.Lens
 import Miso.Html.Element as H
-import Miso.Html.Event as E
+-- import Miso.Html.Event as E
 -- import Miso.Html.Property as P
 import Miso.String qualified as MS
 
@@ -49,11 +49,11 @@ viewModel m =
 
 viewSummary :: Model -> View Model Action
 viewSummary Model{..} = 
-  div_ [ CSS.style_ [ CSS.paddingRight "20px", width "300px" ] ]
-    ([ h2_ [] [ "Summary" ]
-    -- , p_ [] [ button_ [ onClick (ActionAskMd "page2.md") ] [ "fetch page 2" ] ]
+  div_ [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
+    [ h2_ [] [ "Summary" ]
+    , renderSummary _modelSummary
     , p_ [] [ text _modelError ]
-    ] ++ [ renderSummary _modelSummary, hr_ [], p_ [] [ renderRaw _modelSummary] ] )
+    ]
 
 viewPage :: Model -> View Model Action
 viewPage Model{..} = div_ [] fmtPage
@@ -63,6 +63,7 @@ viewPage Model{..} = div_ [] fmtPage
       | otherwise =
           [ renderPage _modelPage
           , hr_ []
+          , p_ [] [ "MD Tree:" ]
           , p_ [] [ renderRaw _modelPage ]
           ]
 
