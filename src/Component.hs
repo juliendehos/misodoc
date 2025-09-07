@@ -28,44 +28,38 @@ updateModel (ActionAskMd fp) =
   getText fp [] ActionSetMd ActionError
 
 updateModel (ActionSetMd str) =
-  modelPage .= str
+  modelPage .= 
+    div_ 
+      []
+      [ renderPage str
+      , hr_ []
+      , p_ [] [ "MD Tree:" ]
+      , p_ [] [ renderRaw str ]
+      ]
 
 updateModel (ActionAskSummary fp) =
   getText fp [] ActionSetSummary ActionError
 
-updateModel (ActionSetSummary str) =
-  modelSummary .= str
+updateModel (ActionSetSummary str) = do
+  err <- use modelError
+  modelSummary .= 
+    div_ 
+      [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
+      [ h2_ [] [ "Summary" ]
+      , renderSummary str
+      , p_ [] [ text err ]
+      ]
 
 -------------------------------------------------------------------------------
 -- view
 -------------------------------------------------------------------------------
 
 viewModel :: Model -> View Model Action
-viewModel m =
+viewModel Model{..} =
   div_ [ CSS.style_ [ CSS.display "flex", CSS.flexDirection "row" ] ]
-    [ viewSummary m
-    , viewPage m
+    [ _modelSummary
+    , _modelPage
     ]
-
-viewSummary :: Model -> View Model Action
-viewSummary Model{..} = 
-  div_ [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
-    [ h2_ [] [ "Summary" ]
-    , renderSummary _modelSummary
-    , p_ [] [ text _modelError ]
-    ]
-
-viewPage :: Model -> View Model Action
-viewPage Model{..} = div_ [] fmtPage
-  where
-    fmtPage
-      | MS.null _modelPage = []
-      | otherwise =
-          [ renderPage _modelPage
-          , hr_ []
-          , p_ [] [ "MD Tree:" ]
-          , p_ [] [ renderRaw _modelPage ]
-          ]
 
 -------------------------------------------------------------------------------
 -- component

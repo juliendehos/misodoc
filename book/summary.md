@@ -1,7 +1,5 @@
 
-- [prefix chapter 1](page1.md)
-
-- [prefix chapter 2](page1.md)
+- [Prefix chapter 1](prefix1.md)
 
 1. [Page 1](page1.md)
 
@@ -11,8 +9,6 @@
 
     1. [Page 2b](page2b.md)
 
-- [suffix chapter 1](page1.md)
-
-- [suffix chapter 2](page1.md)
+- [Suffix chapter 1](suffix1.md)
 
 
