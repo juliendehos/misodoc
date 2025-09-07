@@ -36,7 +36,9 @@ updateModel (ActionAskSummary fp) =
   getText fp [] ActionSetSummary ActionError
 
 updateModel (ActionSetSummary str) = do
-  modelSummary .= renderNode str
+  let node' = renderNode str
+  modelSummary .= node'
+  modelChapters .= parseChapters node'
 
 -------------------------------------------------------------------------------
 -- view
@@ -56,16 +58,18 @@ viewSummary Model{..} =
     [ h2_ [] [ "Summary" ]
     , renderSummary _modelSummary
     , p_ [] [ text _modelError ]
+    -- , p_ [] [ ul_ [] (fmap (\u -> li_ [] [ text u]) _modelChapters) ]
     ]
 
 viewPage :: Model -> View Model Action
-viewPage Model{..} = div_ [] ( renderPage _modelPage : viewRaw )
+viewPage Model{..} = 
+  div_ [] ( renderPage _modelPage : viewRaw )
   where
     viewRaw
       | _modelPage == emptyNode = []
       | otherwise = 
           [ hr_ []
-          , p_ [] [ "MD Tree:" ]
+          , p_ [] [ "CMark Node:" ]
           , p_ [] [ renderRaw _modelPage ]
           ]
 

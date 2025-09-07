@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Helpers 
-  ( renderNode
+  ( parseChapters
+  , renderNode
   , renderPage
   , renderRaw
   , renderSummary
@@ -27,6 +28,16 @@ renderNode = commonmarkToNode [] . fromMisoString
 renderRaw :: Node -> View m a
 renderRaw n = div_ [] [ text (ms (show n)) ]
 
+parseChapters :: Node -> [MisoString]
+parseChapters = \case
+  Node _ DOCUMENT ns -> concatMap parseChapters ns
+  Node _ (LINK u _) ns -> ms u : concatMap parseChapters ns
+  Node _ (LIST _) ns -> concatMap parseChapters ns
+  Node _ PARAGRAPH ns -> concatMap parseChapters ns
+  Node _ ITEM ns -> concatMap parseChapters ns
+  -- Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderSummary ns)
+  _ -> []
+
 renderPage :: Node -> View m Action
 renderPage = \case
   Node _ DOCUMENT ns -> div_ [] (fmap renderPage ns)
@@ -47,7 +58,7 @@ renderPage = \case
   Node _ (CODE txt) ns -> span_ [] (fmap renderPage ns)   -- TODO language + highlightjs
   Node _ EMPH ns -> em_ [] (fmap renderPage ns)
   Node _ STRONG ns -> strong_ [] (fmap renderPage ns)
-  Node _ (LINK u t) ns -> a_ [ href_ (ms u) ] (text (ms t) : fmap renderPage ns)
+  Node _ (LINK u t) ns -> a_ [ href_ (ms u) ] (text (ms t) : fmap renderPage ns)    -- TODO filter chapters
   Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap renderPage ns)
 
 renderSummary :: Node -> View m Action
