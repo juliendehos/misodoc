@@ -52,3 +52,5 @@ mkComponent =
 | baz     | oof    |
 | zab     | ooz    |
 
+bloublou
+

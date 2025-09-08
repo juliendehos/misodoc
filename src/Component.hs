@@ -79,7 +79,7 @@ viewSummary Model{..} =
         ]
     (
       [ h2_ [] [ "Summary" ]
-      , renderSummary fmtChapterLink _modelSummary
+      , renderSummary formatters _modelSummary
       , p_ [] [ text _modelError ]
       ] ++ fmtDebug
     )
@@ -108,19 +108,19 @@ viewPage Model{..} =
   div_ [] 
     (
       [ viewNav
-      , renderPage fmtChapterLink _modelChapters _modelPage
+      , renderPage formatters _modelChapters _modelPage
       ] ++ viewRaw
     )
   where
     viewNav = case getPreviousNext _modelChapters _modelCurrent of
       (Just prev, Just next) -> 
         p_ [] 
-          [ fmtChapterLink prev ["previous"]
+          [ fmtChapterLink formatters prev ["previous"]
           , " - "
-          , fmtChapterLink next ["next"]
+          , fmtChapterLink formatters next ["next"]
           ]
-      (Nothing, Just next) -> p_ [] [ fmtChapterLink next ["next"] ]
-      (Just prev, Nothing) -> p_ [] [ fmtChapterLink prev ["previous"] ]
+      (Nothing, Just next) -> p_ [] [ fmtChapterLink formatters next ["next"] ]
+      (Just prev, Nothing) -> p_ [] [ fmtChapterLink formatters prev ["previous"] ]
       _ -> div_ [] []
 
     viewRaw
@@ -133,16 +133,21 @@ viewPage Model{..} =
           ]
       | otherwise = []
 
-fmtChapterLink :: FmtChapterLink Model Action
-fmtChapterLink u =
-  a_ 
-    [ onClick (ActionAskMd (ms u))
-    , CSS.style_ 
-      [ CSS.textDecoration "underline blue"
-      , CSS.color CSS.blue
-      , CSS.cursor "pointer" 
-      ]
-    ]
+formatters :: Formatters Model Action
+formatters = Formatters
+  { fmtChapterLink = \u ns -> 
+      a_ 
+        [ onClick (ActionAskMd (ms u))
+        , CSS.style_ 
+          [ CSS.textDecoration "underline blue"
+          , CSS.color CSS.blue
+          , CSS.cursor "pointer" 
+          ]
+        ]
+      ns
+  , fmtInlineCode = \t ->
+      span_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
+  }
 
 -------------------------------------------------------------------------------
 -- component

@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Helpers 
-  ( FmtChapterLink
+  ( Formatters(..)
   , getPreviousNext
   , parseChapters
   , renderNode
@@ -14,7 +14,6 @@ module Helpers
 
 import CMark
 import Miso
-import Miso.CSS qualified as CSS
 import Miso.Html.Element as H
 import Miso.Html.Event as E
 import Miso.Html.Property as P
@@ -23,7 +22,10 @@ import Miso.Html.Property as P
 -- export
 -------------------------------------------------------------------------------
 
-type FmtChapterLink m a = MisoString -> [View m a] -> View m a
+data Formatters m a = Formatters
+  { fmtChapterLink :: MisoString -> [View m a] -> View m a
+  , fmtInlineCode :: MisoString -> View m a
+  }
 
 getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
 getPreviousNext chapters current = go' chapters
@@ -54,7 +56,7 @@ parseChapters = \case
   Node _ ITEM ns -> concatMap parseChapters ns
   _ -> []
 
-renderPage :: FmtChapterLink m a -> [MisoString] -> Node -> View m a
+renderPage :: Formatters m a -> [MisoString] -> Node -> View m a
 renderPage fmt chapterLinks = go'
   where
     go' = \case
@@ -64,7 +66,7 @@ renderPage fmt chapterLinks = go'
       Node _ BLOCK_QUOTE ns -> pre_ [] (fmap go' ns)
       Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO" ]
       Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap go' ns)
-      Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap go' ns)
+      Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap go' ns)     -- TODO language + highlightjs
       Node _ (HEADING x) ns -> fmtH x [] (fmap go' ns)
       Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
       Node _ ITEM ns -> li_ [] (fmap go' ns)
@@ -73,17 +75,17 @@ renderPage fmt chapterLinks = go'
       Node _ LINEBREAK ns -> span_ [] [ "TODO" ]
       Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO" ]
       Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO" ]
-      Node _ (CODE txt) ns -> span_ [] (fmap go' ns)   -- TODO language + highlightjs
+      Node _ (CODE txt) ns -> (fmtInlineCode fmt (ms txt))   -- TODO language + highlightjs
       Node _ EMPH ns -> em_ [] (fmap go' ns)
       Node _ STRONG ns -> strong_ [] (fmap go' ns)
       Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap go' ns)
       Node _ (LINK u t) ns -> 
         let u' = ms u
         in if u' `elem` chapterLinks
-          then fmt u' (text (ms t) : fmap (renderSummary fmt) ns) 
+          then fmtChapterLink fmt u' (text (ms t) : fmap (renderSummary fmt) ns) 
           else a_ [ href_ u' ] (text (ms t) : fmap (renderSummary fmt) ns) 
 
-renderSummary :: FmtChapterLink m a -> Node -> View m a
+renderSummary :: Formatters m a -> Node -> View m a
 renderSummary fmt = go'
   where
     go' = \case
@@ -91,7 +93,7 @@ renderSummary fmt = go'
       Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
       Node _ PARAGRAPH ns -> span_ [] (fmap go' ns)
       Node _ ITEM ns -> li_ [] (fmap go' ns)
-      Node _ (LINK u t) ns -> fmt (ms u) (text (ms t) : fmap go' ns)
+      Node _ (LINK u t) ns -> fmtChapterLink fmt (ms u) (text (ms t) : fmap go' ns)
       Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
       _ -> span_ [] []
 
