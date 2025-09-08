@@ -8,7 +8,6 @@ A Miso app that generates a documentation from MD files (inspired by
 
 - render all mardown node types
 - go to next/previous chapter
-- load first page
 
 
 ## setup

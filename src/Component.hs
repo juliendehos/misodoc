@@ -36,8 +36,12 @@ updateModel (ActionAskSummary fp) =
 updateModel (ActionSetSummary str) = do
   let node' = renderNode str
   modelSummary .= node'
-  modelChapters .= parseChapters node'
-  modelError .= ""
+  case parseChapters node' of
+    [] -> pure ()
+    chapters@(c:_) -> do
+      modelChapters .= chapters
+      modelError .= ""
+      issue $ ActionAskMd c
 
 updateModel ActionSwitchDebug =
   modelDebug %= not
@@ -59,8 +63,8 @@ viewSummary Model{..} =
     [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
     (
       [ h2_ [] [ "Summary" ]
-      , p_ [] [ text _modelError ]
       , renderSummary _modelSummary
+      , p_ [] [ text _modelError ]
       ] ++ fmtDebug
     )
   where

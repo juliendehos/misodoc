@@ -39,28 +39,28 @@ parseChapters = \case
   _ -> []
 
 renderPage :: [MisoString] -> Node -> View m Action
-renderPage chapterLinks = go
+renderPage chapterLinks = go'
   where
-    go = \case
-      Node _ DOCUMENT ns -> div_ [] (fmap go ns)
+    go' = \case
+      Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
       Node _ THEMATIC_BREAK ns -> hr_ []
-      Node _ PARAGRAPH ns -> p_ [] (fmap go ns)
-      Node _ BLOCK_QUOTE ns -> pre_ [] (fmap go ns)
+      Node _ PARAGRAPH ns -> p_ [] (fmap go' ns)
+      Node _ BLOCK_QUOTE ns -> pre_ [] (fmap go' ns)
       Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO" ]
-      Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap go ns)
-      Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap go ns)
-      Node _ (HEADING x) ns -> fmtH x [] (fmap go ns)
-      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go ns)
-      Node _ ITEM ns -> li_ [] (fmap go ns)
-      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go ns)
+      Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap go' ns)
+      Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap go' ns)
+      Node _ (HEADING x) ns -> fmtH x [] (fmap go' ns)
+      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
+      Node _ ITEM ns -> li_ [] (fmap go' ns)
+      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
       Node _ SOFTBREAK ns -> span_ [] [ "TODO" ]
       Node _ LINEBREAK ns -> span_ [] [ "TODO" ]
       Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO" ]
       Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO" ]
-      Node _ (CODE txt) ns -> span_ [] (fmap go ns)   -- TODO language + highlightjs
-      Node _ EMPH ns -> em_ [] (fmap go ns)
-      Node _ STRONG ns -> strong_ [] (fmap go ns)
-      Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap go ns)
+      Node _ (CODE txt) ns -> span_ [] (fmap go' ns)   -- TODO language + highlightjs
+      Node _ EMPH ns -> em_ [] (fmap go' ns)
+      Node _ STRONG ns -> strong_ [] (fmap go' ns)
+      Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap go' ns)
       Node _ (LINK u t) ns -> 
         let u' = ms u
         in if u' `elem` chapterLinks
