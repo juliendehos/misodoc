@@ -7,7 +7,7 @@ update:
 	wasm32-wasi-cabal update
 
 todo:
-	find src bench spec -name "*.hs" | xargs grep -i todo
+	find src -name "*.hs" | xargs grep -i todo
 
 build:
 	wasm32-wasi-cabal build app

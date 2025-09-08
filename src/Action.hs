@@ -9,4 +9,5 @@ data Action
   | ActionSetMd MisoString
   | ActionAskSummary MisoString
   | ActionSetSummary MisoString
+  | ActionSwitchDebug
 

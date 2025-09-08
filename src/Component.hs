@@ -1,17 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Component (mkComponent) where
 
 import Miso
 import Miso.CSS as CSS
 import Miso.Lens
 import Miso.Html.Element as H
--- import Miso.Html.Event as E
+import Miso.Html.Event as E
 -- import Miso.Html.Property as P
--- import Miso.String qualified as MS
 
 import Action
 import Helpers
@@ -42,6 +39,9 @@ updateModel (ActionSetSummary str) = do
   modelChapters .= parseChapters node'
   modelError .= ""
 
+updateModel ActionSwitchDebug =
+  modelDebug %= not
+
 -------------------------------------------------------------------------------
 -- view
 -------------------------------------------------------------------------------
@@ -57,11 +57,30 @@ viewSummary :: Model -> View Model Action
 viewSummary Model{..} = 
   div_ 
     [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
-    [ h2_ [] [ "Summary" ]
-    , renderSummary _modelSummary
-    , p_ [] [ text _modelError ]
-    -- , p_ [] [ ul_ [] (fmap (\u -> li_ [] [ text u]) _modelChapters) ]
-    ]
+    (
+      [ h2_ [] [ "Summary" ]
+      , p_ [] [ text _modelError ]
+      , renderSummary _modelSummary
+      ] ++ fmtDebug
+    )
+  where
+    fmtDebug =
+      if _modelDebug
+        then
+          [ p_ [] [ button_ 
+                      [ onClick ActionSwitchDebug ] 
+                      [ "Switch off Debug" ] ]
+          , hr_ []
+          , p_ []
+              [ "chapter links:"
+              , ul_ [] (fmap (\u -> li_ [] [ text u]) _modelChapters)
+              ]
+          ]
+        else
+          [ p_ [] [ button_ 
+                      [ onClick ActionSwitchDebug ] 
+                      [ "Switch on Debug" ] ]
+          ]
 
 viewPage :: Model -> View Model Action
 viewPage Model{..} = 
@@ -69,12 +88,13 @@ viewPage Model{..} =
   where
     viewRaw
       | _modelPage == emptyNode = []
-      | otherwise = 
+      | _modelDebug = 
           [ hr_ []
           , p_ [] [ renderRaw _modelPage ]
           , hr_ []
           , p_ [] [ renderPretty _modelPage ]
           ]
+      | otherwise = []
 
 -------------------------------------------------------------------------------
 -- component
