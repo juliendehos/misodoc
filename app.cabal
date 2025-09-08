@@ -31,7 +31,7 @@ executable app
     Model
   build-depends:
     base,
-    cmark,
+    cmark-gfm,
     miso,
     text
 

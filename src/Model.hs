@@ -2,7 +2,7 @@
 
 module Model where
 
-import CMark
+import CMarkGFM
 import Miso
 import Miso.Lens
 import Miso.Lens.TH

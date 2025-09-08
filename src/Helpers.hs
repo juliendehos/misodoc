@@ -12,7 +12,7 @@ module Helpers
   , renderSummary
   ) where
 
-import CMark
+import CMarkGFM
 import Data.List (foldl')
 import Data.Text qualified as T
 import Miso
@@ -45,7 +45,7 @@ getPreviousNext chapters current = go' chapters
       _ -> (Nothing, Nothing)
 
 renderNode :: MisoString -> Node
-renderNode = commonmarkToNode [] . fromMisoString
+renderNode = commonmarkToNode [] [extAutolink] . fromMisoString
 
 renderRaw :: Node -> View m a
 renderRaw n = div_ [] [ text (ms (show n)) ]
@@ -87,6 +87,13 @@ renderPage fmt chapterLinks = go'
         in if u' `elem` chapterLinks
           then fmtChapterLink fmt u' (text (ms t) : fmap (renderSummary fmt) ns) 
           else a_ [ href_ u' ] (text (ms t) : fmap (renderSummary fmt) ns) 
+
+      Node _ STRIKETHROUGH _ -> div_ [] [ "TODO STRIKETHROUGH" ]
+      Node _ (TABLE _) _ -> div_ [] [ "TODO TABLE" ]
+      Node _ TABLE_ROW _ -> div_ [] [ "TODO ROW" ]
+      Node _ TABLE_CELL _ -> div_ [] [ "TODO CELL" ]
+      Node _ FOOTNOTE_REFERENCE _ -> div_ [] [ "TODO FOOTNOTE_REFERENCE" ]
+      Node _ FOOTNOTE_DEFINITION _ -> div_ [] [ "TODO FOOTNOTE_DEFINITION" ]
 
     isTable = \case
       (Node _ (TEXT x) _ : _) -> "|" `T.isPrefixOf` x
@@ -138,21 +145,21 @@ renderPretty = \case
   Node _ (CODE txt) ns -> pretty (ms $ "CODE " <> show txt) ns
   Node _ EMPH ns -> pretty "EMPH" ns
   Node _ STRONG ns -> pretty "STRONG" ns
+
+  Node _ STRIKETHROUGH _ -> div_ [] [ "TODO STRIKETHROUGH" ]
+  Node _ (TABLE _) _ -> div_ [] [ "TODO TABLE" ]
+  Node _ TABLE_ROW _ -> div_ [] [ "TODO ROW" ]
+  Node _ TABLE_CELL _ -> div_ [] [ "TODO CELL" ]
+  Node _ FOOTNOTE_REFERENCE _ -> div_ [] [ "TODO FOOTNOTE_REFERENCE" ]
+  Node _ FOOTNOTE_DEFINITION _ -> div_ [] [ "TODO FOOTNOTE_DEFINITION" ]
+
   where
     pretty :: MisoString -> [Node] -> View m a
-    pretty name ns = div_ [] [ text (name <> ":"), ul_ [] (map (\n -> li_ [] [renderPretty n]) ns) ]
+    pretty name ns = div_ [] [ text name, ul_ [] (map (\n -> li_ [] [renderPretty n]) ns) ]
 
 -------------------------------------------------------------------------------
 -- internal
 -------------------------------------------------------------------------------
-
-nodeTable :: [Node] -> [[Node]]
-nodeTable ns = 
-  let (cur, tot) = foldl' f ([], []) ns
-  in tot ++ [cur]
-  where
-    f :: ([Node], [[Node]]) -> Node -> ([Node], [[Node]])
-    f (cur, tot) n = (n : cur, tot)    -- TODO
 
 fmtH :: Level -> [Attribute action] -> [View model action] -> View model action
 fmtH = \case
