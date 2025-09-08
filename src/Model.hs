@@ -6,7 +6,6 @@ import CMark
 import Miso
 import Miso.Lens
 import Miso.Lens.TH
-import Miso.Html.Element as H
 
 data Model = Model
   { _modelError :: MisoString

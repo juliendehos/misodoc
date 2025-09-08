@@ -13,6 +13,8 @@ module Helpers
   ) where
 
 import CMark
+import Data.List (foldl')
+import Data.Text qualified as T
 import Miso
 import Miso.Html.Element as H
 import Miso.Html.Property as P
@@ -25,6 +27,7 @@ data Formatters m a = Formatters
   { fmtChapterLink :: MisoString -> [View m a] -> View m a
   , fmtInlineCode :: MisoString -> View m a
   , fmtBlockQuote :: [View m a] -> View m a
+  , fmtCodeBlock :: [View m a] -> View m a
   }
 
 getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
@@ -62,11 +65,11 @@ renderPage fmt chapterLinks = go'
     go' = \case
       Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
       Node _ THEMATIC_BREAK ns -> hr_ []
-      Node _ PARAGRAPH ns -> div_ [] (fmap go' ns)
+      Node _ PARAGRAPH ns -> if isTable ns then fmtTable ns else div_ [] (fmap go' ns)
       Node _ BLOCK_QUOTE ns -> fmtBlockQuote fmt (fmap go' ns)
       Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO HTML_BLOCK" ]
       Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap go' ns)
-      Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap go' ns)     -- TODO language + highlightjs
+      Node _ (CODE_BLOCK _info txt) _ -> fmtCodeBlock fmt [ text (ms txt) ]  -- TODO highlightjs ?
       Node _ (HEADING x) ns -> fmtH x [] (fmap go' ns)
       Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
       Node _ ITEM ns -> li_ [] (fmap go' ns)
@@ -84,6 +87,18 @@ renderPage fmt chapterLinks = go'
         in if u' `elem` chapterLinks
           then fmtChapterLink fmt u' (text (ms t) : fmap (renderSummary fmt) ns) 
           else a_ [ href_ u' ] (text (ms t) : fmap (renderSummary fmt) ns) 
+
+    isTable = \case
+      (Node _ (TEXT x) _ : _) -> "|" `T.isPrefixOf` x
+      _ -> False
+
+    fmtTable ns0 = 
+      let ns1 = flip filter ns0 $ \case 
+                    (Node _ (TEXT x) _) -> not ("|-" `T.isPrefixOf` x)
+                    (Node _ SOFTBREAK _) -> False     -- TODO split on SOFTBREAK
+                    _ -> True
+      in p_ [] [ table_ [] ( map (\n -> tr_ [] [ td_ [] [go' n] ] ) ns1 ) ]
+
 
 renderSummary :: Formatters m a -> Node -> View m a
 renderSummary fmt = go'
@@ -130,6 +145,14 @@ renderPretty = \case
 -------------------------------------------------------------------------------
 -- internal
 -------------------------------------------------------------------------------
+
+nodeTable :: [Node] -> [[Node]]
+nodeTable ns = 
+  let (cur, tot) = foldl' f ([], []) ns
+  in tot ++ [cur]
+  where
+    f :: ([Node], [[Node]]) -> Node -> ([Node], [[Node]])
+    f (cur, tot) n = (n : cur, tot)    -- TODO
 
 fmtH :: Level -> [Attribute action] -> [View model action] -> View model action
 fmtH = \case

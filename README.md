@@ -4,13 +4,6 @@ A Miso app that generates a documentation from MD files (inspired by
 [mdBook](https://rust-lang.github.io/mdBook/)).
 
 
-## TODO
-
-- render table
-- render code block
-- render block/inline quote
-
-
 ## setup
 
 - install Nix Flakes
@@ -54,4 +47,9 @@ docker run --rm -it -p 3000:3000 misodoc:latest
 nix-shell
 code .
 ```
+
+
+## references
+
+- [cmark](https://hackage.haskell.org/package/cmark)
 

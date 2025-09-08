@@ -32,5 +32,6 @@ executable app
   build-depends:
     base,
     cmark,
-    miso
+    miso,
+    text
 

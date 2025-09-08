@@ -39,7 +39,7 @@ mkComponent =
     { initialAction = Just (ActionAskSummary "summary.md") }
 ```
 
-## block
+## block quote
 
 > foo
 >

@@ -8,7 +8,6 @@ import Miso.CSS qualified as CSS
 import Miso.Lens
 import Miso.Html.Element as H
 import Miso.Html.Event as E
--- import Miso.Html.Property as P
 
 import Helpers
 import Model
@@ -153,6 +152,14 @@ formatters = Formatters
           [ CSS.border "1px solid black"
           , CSS.padding "10px"
           , CSS.backgroundColor CSS.lightyellow
+          ]
+        ]
+  , fmtCodeBlock = 
+      pre_ 
+        [ CSS.style_ 
+          [ CSS.border "1px solid black"
+          , CSS.padding "10px"
+          , CSS.backgroundColor CSS.lightgrey
           ]
         ]
   }
