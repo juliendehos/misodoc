@@ -89,7 +89,7 @@ viewSummary Model{..} =
         then
           [ p_ [] [ button_ 
                       [ onClick ActionSwitchDebug ] 
-                      [ "Switch off Debug" ] ]
+                      [ "Hide Debug" ] ]
           , hr_ []
           , p_ []
               [ "chapter links:"
@@ -100,7 +100,7 @@ viewSummary Model{..} =
         else
           [ p_ [] [ button_ 
                       [ onClick ActionSwitchDebug ] 
-                      [ "Switch on Debug" ] ]
+                      [ "Show Debug" ] ]
           ]
 
 viewPage :: Model -> View Model Action
