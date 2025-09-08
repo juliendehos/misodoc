@@ -147,6 +147,14 @@ formatters = Formatters
       ns
   , fmtInlineCode = \t ->
       span_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
+  , fmtBlockQuote = 
+      pre_ 
+        [ CSS.style_ 
+          [ CSS.border "1px solid black"
+          , CSS.padding "10px"
+          , CSS.backgroundColor CSS.lightyellow
+          ]
+        ]
   }
 
 -------------------------------------------------------------------------------

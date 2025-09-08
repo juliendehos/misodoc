@@ -7,7 +7,7 @@ A Miso app that generates a documentation from MD files (inspired by
 ## TODO
 
 - render table
-- render block/inline code
+- render code block
 - render block/inline quote
 
 

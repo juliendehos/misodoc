@@ -15,7 +15,6 @@ module Helpers
 import CMark
 import Miso
 import Miso.Html.Element as H
-import Miso.Html.Event as E
 import Miso.Html.Property as P
 
 -------------------------------------------------------------------------------
@@ -25,6 +24,7 @@ import Miso.Html.Property as P
 data Formatters m a = Formatters
   { fmtChapterLink :: MisoString -> [View m a] -> View m a
   , fmtInlineCode :: MisoString -> View m a
+  , fmtBlockQuote :: [View m a] -> View m a
   }
 
 getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
@@ -62,20 +62,20 @@ renderPage fmt chapterLinks = go'
     go' = \case
       Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
       Node _ THEMATIC_BREAK ns -> hr_ []
-      Node _ PARAGRAPH ns -> p_ [] (fmap go' ns)
-      Node _ BLOCK_QUOTE ns -> pre_ [] (fmap go' ns)
-      Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO" ]
+      Node _ PARAGRAPH ns -> div_ [] (fmap go' ns)
+      Node _ BLOCK_QUOTE ns -> fmtBlockQuote fmt (fmap go' ns)
+      Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO HTML_BLOCK" ]
       Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap go' ns)
       Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap go' ns)     -- TODO language + highlightjs
       Node _ (HEADING x) ns -> fmtH x [] (fmap go' ns)
       Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
       Node _ ITEM ns -> li_ [] (fmap go' ns)
       Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
-      Node _ SOFTBREAK ns -> span_ [] [ "TODO" ]
-      Node _ LINEBREAK ns -> span_ [] [ "TODO" ]
-      Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO" ]
-      Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO" ]
-      Node _ (CODE txt) ns -> (fmtInlineCode fmt (ms txt))   -- TODO language + highlightjs
+      Node _ SOFTBREAK ns -> span_ [] [ "TODO SOFTBREAK" ]
+      Node _ LINEBREAK ns -> span_ [] [ "TODO LINEBREAK" ]
+      Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO HTML_INLINE" ]
+      Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO CUSTOM_INLINE" ]
+      Node _ (CODE txt) _ -> (fmtInlineCode fmt (ms txt))
       Node _ EMPH ns -> em_ [] (fmap go' ns)
       Node _ STRONG ns -> strong_ [] (fmap go' ns)
       Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap go' ns)
