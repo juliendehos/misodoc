@@ -3,25 +3,35 @@
 
 module Helpers 
   ( Formatters(..)
+  , getChapters
   , getPreviousNext
-  , parseChapters
-  , renderNode
-  , renderPage
-  , renderPretty
+  , Node
+  , parseNodes
+  -- , renderPage
+  -- , renderPretty
   , renderRaw
-  , renderSummary
+  -- , renderSummary
   ) where
 
-import CMarkGFM
 import Data.List (foldl')
+import Data.List.NonEmpty qualified as NE
 import Data.Text qualified as T
 import Miso
 import Miso.Html.Element as H
 import Miso.Html.Property as P
+import Text.Megaparsec.Error (errorBundlePretty)
+import Text.MMark -- (MMark(..), parse)
+import Text.MMark.Internal.Type
+import qualified Text.URI as URI
+
+-- https://hackage.haskell.org/package/mmark-0.0.8.0/docs/Text-MMark-Extension.html#t:Block
+-- https://hackage.haskell.org/package/mmark-0.0.8.0/docs/Text-MMark-Extension.html#t:Inline
 
 -------------------------------------------------------------------------------
 -- export
 -------------------------------------------------------------------------------
+
+type Node = Bni
 
 data Formatters m a = Formatters
   { fmtChapterLink :: MisoString -> [View m a] -> View m a
@@ -29,6 +39,15 @@ data Formatters m a = Formatters
   , fmtBlockQuote :: [View m a] -> View m a
   , fmtCodeBlock :: [View m a] -> View m a
   }
+
+parseNodes :: MisoString -> MisoString -> Either MisoString [Node]
+parseNodes fp str = 
+  case parse (fromMisoString fp) (fromMisoString str) of
+    Left bundle -> Left $ ms $ errorBundlePretty bundle
+    Right ns -> Right $ mmarkBlocks ns
+
+renderRaw :: [Node] -> View m a
+renderRaw ns = div_ [] $ map (\n -> div_ [] [ text (ms (show n)) ]) ns
 
 getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
 getPreviousNext chapters current = go' chapters
@@ -44,20 +63,32 @@ getPreviousNext chapters current = go' chapters
         else (Nothing, Nothing)
       _ -> (Nothing, Nothing)
 
-renderNode :: MisoString -> Node
-renderNode = commonmarkToNode [] [extAutolink] . fromMisoString
+getChapters :: [Node] -> [MisoString]
+getChapters = concatMap goNode
+  where
 
-renderRaw :: Node -> View m a
-renderRaw n = div_ [] [ text (ms (show n)) ]
+    goNode :: Node -> [MisoString]
+    goNode = \case
+      UnorderedList ns -> concatMap (concatMap goNode) ns
+      OrderedList _ ns -> concatMap (concatMap goNode) ns
+      Naked ns -> concatMap goInline ns
+      Paragraph ns -> concatMap goInline ns
+      _ -> []
 
-parseChapters :: Node -> [MisoString]
-parseChapters = \case
-  Node _ DOCUMENT ns -> concatMap parseChapters ns
-  Node _ (LINK u _) ns -> ms u : concatMap parseChapters ns
-  Node _ (LIST _) ns -> concatMap parseChapters ns
-  Node _ PARAGRAPH ns -> concatMap parseChapters ns
-  Node _ ITEM ns -> concatMap parseChapters ns
-  _ -> []
+    goInline :: Inline -> [MisoString]
+    goInline = \case
+      Link _ uri _ -> [ ms $ URI.render uri ]
+      _ -> []   -- TODO
+
+
+{-
+renderPretty :: [Node] -> View m a
+renderPretty = \case
+  Node _ DOCUMENT ns -> pretty "DOCUMENT" ns
+ 
+-}
+
+{-
 
 renderPage :: Formatters m a -> [MisoString] -> Node -> View m a
 renderPage fmt chapterLinks = go'
@@ -146,13 +177,6 @@ renderPretty = \case
   Node _ EMPH ns -> pretty "EMPH" ns
   Node _ STRONG ns -> pretty "STRONG" ns
 
-  Node _ STRIKETHROUGH _ -> div_ [] [ "TODO STRIKETHROUGH" ]
-  Node _ (TABLE _) _ -> div_ [] [ "TODO TABLE" ]
-  Node _ TABLE_ROW _ -> div_ [] [ "TODO ROW" ]
-  Node _ TABLE_CELL _ -> div_ [] [ "TODO CELL" ]
-  Node _ FOOTNOTE_REFERENCE _ -> div_ [] [ "TODO FOOTNOTE_REFERENCE" ]
-  Node _ FOOTNOTE_DEFINITION _ -> div_ [] [ "TODO FOOTNOTE_DEFINITION" ]
-
   where
     pretty :: MisoString -> [Node] -> View m a
     pretty name ns = div_ [] [ text name, ul_ [] (map (\n -> li_ [] [renderPretty n]) ns) ]
@@ -174,4 +198,7 @@ fmtListAttrs :: ListAttributes -> [Attribute action] -> [View model action] -> V
 fmtListAttrs attrs = case listType attrs of
   BULLET_LIST -> ul_
   ORDERED_LIST -> ol_
+
+-}
+
 

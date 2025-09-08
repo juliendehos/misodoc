@@ -14,7 +14,7 @@ text **strong** *italic*
 
 1. item1
 
-1. item2
+2. item2
 
 ## image
 

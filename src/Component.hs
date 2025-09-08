@@ -18,10 +18,10 @@ import Model
 
 data Action
   = ActionError MisoString
-  | ActionAskMd MisoString
-  | ActionSetMd MisoString MisoString
+  | ActionAskPage MisoString
+  | ActionSetPage MisoString MisoString
   | ActionAskSummary MisoString
-  | ActionSetSummary MisoString
+  | ActionSetSummary MisoString MisoString
   | ActionSwitchDebug
 
 -------------------------------------------------------------------------------
@@ -33,26 +33,31 @@ updateModel :: Action -> Transition Model Action
 updateModel (ActionError str) =
   modelError .= str
 
-updateModel (ActionAskMd fp) =
-  getText fp [] (ActionSetMd fp) ActionError
+updateModel (ActionAskPage fp) =
+  getText fp [] (ActionSetPage fp) ActionError
 
-updateModel (ActionSetMd fp str) = do
-  modelCurrent .= fp
-  modelPage .= renderNode str
-  modelError .= ""
+updateModel (ActionSetPage fp str) = do
+  case parseNodes fp str of
+    Left err -> modelError .= err
+    Right ns -> do
+      modelCurrent .= fp
+      modelPage .= ns
+      modelError .= ""
 
 updateModel (ActionAskSummary fp) =
-  getText fp [] ActionSetSummary ActionError
+  getText fp [] (ActionSetSummary fp) ActionError
 
-updateModel (ActionSetSummary str) = do
-  let node' = renderNode str
-  modelSummary .= node'
-  case parseChapters node' of
-    [] -> pure ()
-    chapters@(c:_) -> do
-      modelChapters .= chapters
+updateModel (ActionSetSummary fp str) = do
+  case parseNodes fp str of
+    Left err -> modelError .= err
+    Right ns -> do
+      modelSummary .= ns
       modelError .= ""
-      issue $ ActionAskMd c
+      case getChapters ns of
+        [] -> pure ()
+        chapters@(c:_) -> do
+          modelChapters .= chapters
+          issue $ ActionAskPage c
 
 updateModel ActionSwitchDebug =
   modelDebug %= not
@@ -78,7 +83,7 @@ viewSummary Model{..} =
         ]
     (
       [ h2_ [] [ "Summary" ]
-      , renderSummary formatters _modelSummary
+      -- , renderSummary formatters _modelSummary
       , p_ [] [ text _modelError ]
       ] ++ fmtDebug
     )
@@ -107,7 +112,7 @@ viewPage Model{..} =
   div_ [] 
     (
       [ viewNav
-      , renderPage formatters _modelChapters _modelPage
+      -- , renderPage formatters _modelChapters _modelPage
       ] ++ viewRaw
     )
   where
@@ -118,17 +123,17 @@ viewPage Model{..} =
           , " - "
           , fmtChapterLink formatters next ["next"]
           ]
-      (Nothing, Just next) -> p_ [] [ fmtChapterLink formatters next ["next"] ]
-      (Just prev, Nothing) -> p_ [] [ fmtChapterLink formatters prev ["previous"] ]
+      (Nothing, Just next) -> p_ [] [ "previous - ", fmtChapterLink formatters next ["next"] ]
+      (Just prev, Nothing) -> p_ [] [ fmtChapterLink formatters prev ["previous"], " - next" ]
       _ -> div_ [] []
 
     viewRaw
-      | _modelPage == emptyNode = []
+      | null _modelPage = []
       | _modelDebug = 
           [ hr_ []
           , p_ [] [ renderRaw _modelPage ]
           , hr_ []
-          , p_ [] [ renderPretty _modelPage ]
+          -- , p_ [] [ renderPretty _modelPage ]
           ]
       | otherwise = []
 
@@ -136,7 +141,7 @@ formatters :: Formatters Model Action
 formatters = Formatters
   { fmtChapterLink = \u ns -> 
       a_ 
-        [ onClick (ActionAskMd (ms u))
+        [ onClick (ActionAskPage (ms u))
         , CSS.style_ 
           [ CSS.textDecoration "underline blue"
           , CSS.color CSS.blue

@@ -48,8 +48,3 @@ nix-shell
 code .
 ```
 
-
-## references
-
-- [cmark](https://hackage.haskell.org/package/cmark)
-

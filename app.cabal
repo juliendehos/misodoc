@@ -31,7 +31,9 @@ executable app
     Model
   build-depends:
     base,
-    cmark-gfm,
+    megaparsec,
+    mmark,
+    modern-uri,
     miso,
     text
 
