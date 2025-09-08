@@ -36,31 +36,36 @@ parseChapters = \case
   Node _ (LIST _) ns -> concatMap parseChapters ns
   Node _ PARAGRAPH ns -> concatMap parseChapters ns
   Node _ ITEM ns -> concatMap parseChapters ns
-  -- Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderSummary ns)
   _ -> []
 
-renderPage :: Node -> View m Action
-renderPage = \case
-  Node _ DOCUMENT ns -> div_ [] (fmap renderPage ns)
-  Node _ THEMATIC_BREAK ns -> hr_ []
-  Node _ PARAGRAPH ns -> p_ [] (fmap renderPage ns)
-  Node _ BLOCK_QUOTE ns -> pre_ [] (fmap renderPage ns)
-  Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO" ]
-  Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap renderPage ns)
-  Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap renderPage ns)
-  Node _ (HEADING x) ns -> fmtH x [] (fmap renderPage ns)
-  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderPage ns)
-  Node _ ITEM ns -> li_ [] (fmap renderPage ns)
-  Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderPage ns)
-  Node _ SOFTBREAK ns -> span_ [] [ "TODO" ]
-  Node _ LINEBREAK ns -> span_ [] [ "TODO" ]
-  Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO" ]
-  Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO" ]
-  Node _ (CODE txt) ns -> span_ [] (fmap renderPage ns)   -- TODO language + highlightjs
-  Node _ EMPH ns -> em_ [] (fmap renderPage ns)
-  Node _ STRONG ns -> strong_ [] (fmap renderPage ns)
-  Node _ (LINK u t) ns -> a_ [ href_ (ms u) ] (text (ms t) : fmap renderPage ns)    -- TODO filter chapters
-  Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap renderPage ns)
+renderPage :: [MisoString] -> Node -> View m Action
+renderPage chapterLinks = go
+  where
+    go = \case
+      Node _ DOCUMENT ns -> div_ [] (fmap go ns)
+      Node _ THEMATIC_BREAK ns -> hr_ []
+      Node _ PARAGRAPH ns -> p_ [] (fmap go ns)
+      Node _ BLOCK_QUOTE ns -> pre_ [] (fmap go ns)
+      Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO" ]
+      Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap go ns)
+      Node _ (CODE_BLOCK info txt) ns -> pre_ [] (fmap go ns)
+      Node _ (HEADING x) ns -> fmtH x [] (fmap go ns)
+      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go ns)
+      Node _ ITEM ns -> li_ [] (fmap go ns)
+      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go ns)
+      Node _ SOFTBREAK ns -> span_ [] [ "TODO" ]
+      Node _ LINEBREAK ns -> span_ [] [ "TODO" ]
+      Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO" ]
+      Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO" ]
+      Node _ (CODE txt) ns -> span_ [] (fmap go ns)   -- TODO language + highlightjs
+      Node _ EMPH ns -> em_ [] (fmap go ns)
+      Node _ STRONG ns -> strong_ [] (fmap go ns)
+      Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap go ns)
+      Node _ (LINK u t) ns -> 
+        let u' = ms u
+        in if u' `elem` chapterLinks
+          then fmtChapterLink u' (text (ms t) : fmap renderSummary ns) 
+          else a_ [ href_ u' ] (text (ms t) : fmap renderSummary ns) 
 
 renderSummary :: Node -> View m Action
 renderSummary = \case
@@ -68,7 +73,7 @@ renderSummary = \case
   Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderSummary ns)
   Node _ PARAGRAPH ns -> span_ [] (fmap renderSummary ns)
   Node _ ITEM ns -> li_ [] (fmap renderSummary ns)
-  Node _ (LINK u t) ns -> fmtInternalLink (ms u) (text (ms t) : fmap renderSummary ns) 
+  Node _ (LINK u t) ns -> fmtChapterLink (ms u) (text (ms t) : fmap renderSummary ns)
   Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderSummary ns)
   _ -> span_ [] []
 
@@ -106,8 +111,8 @@ renderPretty = \case
 -- internal
 -------------------------------------------------------------------------------
 
-fmtInternalLink :: MisoString -> [View model Action] -> View model Action
-fmtInternalLink u =
+fmtChapterLink :: MisoString -> [View model Action] -> View model Action
+fmtChapterLink u =
   a_ 
     [ onClick (ActionAskMd (ms u))
     , CSS.style_ 

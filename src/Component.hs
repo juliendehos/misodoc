@@ -29,8 +29,9 @@ updateModel (ActionError str) =
 updateModel (ActionAskMd fp) =
   getText fp [] ActionSetMd ActionError
 
-updateModel (ActionSetMd str) =
+updateModel (ActionSetMd str) = do
   modelPage .= renderNode str
+  modelError .= ""
 
 updateModel (ActionAskSummary fp) =
   getText fp [] ActionSetSummary ActionError
@@ -39,6 +40,7 @@ updateModel (ActionSetSummary str) = do
   let node' = renderNode str
   modelSummary .= node'
   modelChapters .= parseChapters node'
+  modelError .= ""
 
 -------------------------------------------------------------------------------
 -- view
@@ -63,7 +65,7 @@ viewSummary Model{..} =
 
 viewPage :: Model -> View Model Action
 viewPage Model{..} = 
-  div_ [] ( renderPage _modelPage : viewRaw )
+  div_ [] ( renderPage _modelChapters _modelPage : viewRaw )
   where
     viewRaw
       | _modelPage == emptyNode = []
