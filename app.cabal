@@ -26,7 +26,6 @@ executable app
   main-is:
     Main.hs
   other-modules:
-    Action
     Component
     Helpers
     Model

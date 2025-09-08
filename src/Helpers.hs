@@ -2,7 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Helpers 
-  ( parseChapters
+  ( FmtChapterLink
+  , getPreviousNext
+  , parseChapters
   , renderNode
   , renderPage
   , renderPretty
@@ -17,11 +19,25 @@ import Miso.Html.Element as H
 import Miso.Html.Event as E
 import Miso.Html.Property as P
 
-import Action
-
 -------------------------------------------------------------------------------
 -- export
 -------------------------------------------------------------------------------
+
+type FmtChapterLink m a = MisoString -> [View m a] -> View m a
+
+getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
+getPreviousNext chapters current = go' chapters
+  where
+    go' = \case
+      (x0:x1:x2:xs) -> if x0 == current
+        then (Nothing, Just x1)
+        else if x1 == current
+          then (Just x0, Just x2)
+          else go' (x1:x2:xs)
+      [x0,x1] -> if x1 == current
+        then (Just x0, Nothing)
+        else (Nothing, Nothing)
+      _ -> (Nothing, Nothing)
 
 renderNode :: MisoString -> Node
 renderNode = commonmarkToNode [] . fromMisoString
@@ -38,8 +54,8 @@ parseChapters = \case
   Node _ ITEM ns -> concatMap parseChapters ns
   _ -> []
 
-renderPage :: [MisoString] -> Node -> View m Action
-renderPage chapterLinks = go'
+renderPage :: FmtChapterLink m a -> [MisoString] -> Node -> View m a
+renderPage fmt chapterLinks = go'
   where
     go' = \case
       Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
@@ -64,18 +80,20 @@ renderPage chapterLinks = go'
       Node _ (LINK u t) ns -> 
         let u' = ms u
         in if u' `elem` chapterLinks
-          then fmtChapterLink u' (text (ms t) : fmap renderSummary ns) 
-          else a_ [ href_ u' ] (text (ms t) : fmap renderSummary ns) 
+          then fmt u' (text (ms t) : fmap (renderSummary fmt) ns) 
+          else a_ [ href_ u' ] (text (ms t) : fmap (renderSummary fmt) ns) 
 
-renderSummary :: Node -> View m Action
-renderSummary = \case
-  Node _ DOCUMENT ns -> div_ [] (fmap renderSummary ns)
-  Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap renderSummary ns)
-  Node _ PARAGRAPH ns -> span_ [] (fmap renderSummary ns)
-  Node _ ITEM ns -> li_ [] (fmap renderSummary ns)
-  Node _ (LINK u t) ns -> fmtChapterLink (ms u) (text (ms t) : fmap renderSummary ns)
-  Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderSummary ns)
-  _ -> span_ [] []
+renderSummary :: FmtChapterLink m a -> Node -> View m a
+renderSummary fmt = go'
+  where
+    go' = \case
+      Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
+      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
+      Node _ PARAGRAPH ns -> span_ [] (fmap go' ns)
+      Node _ ITEM ns -> li_ [] (fmap go' ns)
+      Node _ (LINK u t) ns -> fmt (ms u) (text (ms t) : fmap go' ns)
+      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
+      _ -> span_ [] []
 
 -------------------------------------------------------------------------------
 -- pretty printer
@@ -110,17 +128,6 @@ renderPretty = \case
 -------------------------------------------------------------------------------
 -- internal
 -------------------------------------------------------------------------------
-
-fmtChapterLink :: MisoString -> [View model Action] -> View model Action
-fmtChapterLink u =
-  a_ 
-    [ onClick (ActionAskMd (ms u))
-    , CSS.style_ 
-      [ CSS.textDecoration "underline blue"
-      , CSS.color CSS.blue
-      , CSS.cursor "pointer" 
-      ]
-    ]
 
 fmtH :: Level -> [Attribute action] -> [View model action] -> View model action
 fmtH = \case

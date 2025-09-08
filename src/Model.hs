@@ -11,6 +11,7 @@ import Miso.Html.Element as H
 data Model = Model
   { _modelError :: MisoString
   , _modelChapters :: [MisoString]
+  , _modelCurrent :: MisoString
   , _modelSummary :: Node
   , _modelPage :: Node
   , _modelDebug :: Bool
@@ -19,7 +20,7 @@ data Model = Model
 makeLenses ''Model
 
 mkModel :: Model
-mkModel = Model "" [] emptyNode emptyNode False
+mkModel = Model "" [] "" emptyNode emptyNode False
 
 emptyNode :: Node
 emptyNode = Node Nothing DOCUMENT []

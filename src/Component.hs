@@ -4,15 +4,26 @@
 module Component (mkComponent) where
 
 import Miso
-import Miso.CSS as CSS
+import Miso.CSS qualified as CSS
 import Miso.Lens
 import Miso.Html.Element as H
 import Miso.Html.Event as E
 -- import Miso.Html.Property as P
 
-import Action
 import Helpers
 import Model
+
+-------------------------------------------------------------------------------
+-- Action
+-------------------------------------------------------------------------------
+
+data Action
+  = ActionError MisoString
+  | ActionAskMd MisoString
+  | ActionSetMd MisoString MisoString
+  | ActionAskSummary MisoString
+  | ActionSetSummary MisoString
+  | ActionSwitchDebug
 
 -------------------------------------------------------------------------------
 -- update
@@ -24,9 +35,10 @@ updateModel (ActionError str) =
   modelError .= str
 
 updateModel (ActionAskMd fp) =
-  getText fp [] ActionSetMd ActionError
+  getText fp [] (ActionSetMd fp) ActionError
 
-updateModel (ActionSetMd str) = do
+updateModel (ActionSetMd fp str) = do
+  modelCurrent .= fp
   modelPage .= renderNode str
   modelError .= ""
 
@@ -60,10 +72,14 @@ viewModel m =
 viewSummary :: Model -> View Model Action
 viewSummary Model{..} = 
   div_ 
-    [ CSS.style_ [ CSS.paddingRight "20px", minWidth "300px", maxWidth "300px" ] ]
+    [ CSS.style_ 
+        [ CSS.paddingRight "20px"
+        , CSS.minWidth "300px"
+        , CSS.maxWidth "300px" ]
+        ]
     (
       [ h2_ [] [ "Summary" ]
-      , renderSummary _modelSummary
+      , renderSummary fmtChapterLink _modelSummary
       , p_ [] [ text _modelError ]
       ] ++ fmtDebug
     )
@@ -78,6 +94,7 @@ viewSummary Model{..} =
           , p_ []
               [ "chapter links:"
               , ul_ [] (fmap (\u -> li_ [] [ text u]) _modelChapters)
+              , text ("current: " <> _modelCurrent)
               ]
           ]
         else
@@ -88,8 +105,24 @@ viewSummary Model{..} =
 
 viewPage :: Model -> View Model Action
 viewPage Model{..} = 
-  div_ [] ( renderPage _modelChapters _modelPage : viewRaw )
+  div_ [] 
+    (
+      [ viewNav
+      , renderPage fmtChapterLink _modelChapters _modelPage
+      ] ++ viewRaw
+    )
   where
+    viewNav = case getPreviousNext _modelChapters _modelCurrent of
+      (Just prev, Just next) -> 
+        p_ [] 
+          [ fmtChapterLink prev ["previous"]
+          , " - "
+          , fmtChapterLink next ["next"]
+          ]
+      (Nothing, Just next) -> p_ [] [ fmtChapterLink next ["next"] ]
+      (Just prev, Nothing) -> p_ [] [ fmtChapterLink prev ["previous"] ]
+      _ -> div_ [] []
+
     viewRaw
       | _modelPage == emptyNode = []
       | _modelDebug = 
@@ -99,6 +132,17 @@ viewPage Model{..} =
           , p_ [] [ renderPretty _modelPage ]
           ]
       | otherwise = []
+
+fmtChapterLink :: FmtChapterLink Model Action
+fmtChapterLink u =
+  a_ 
+    [ onClick (ActionAskMd (ms u))
+    , CSS.style_ 
+      [ CSS.textDecoration "underline blue"
+      , CSS.color CSS.blue
+      , CSS.cursor "pointer" 
+      ]
+    ]
 
 -------------------------------------------------------------------------------
 -- component
