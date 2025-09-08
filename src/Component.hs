@@ -69,8 +69,9 @@ viewPage Model{..} =
       | _modelPage == emptyNode = []
       | otherwise = 
           [ hr_ []
-          , p_ [] [ "CMark Node:" ]
           , p_ [] [ renderRaw _modelPage ]
+          , hr_ []
+          , p_ [] [ renderPretty _modelPage ]
           ]
 
 -------------------------------------------------------------------------------

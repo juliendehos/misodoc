@@ -5,6 +5,7 @@ module Helpers
   ( parseChapters
   , renderNode
   , renderPage
+  , renderPretty
   , renderRaw
   , renderSummary
   ) where
@@ -70,6 +71,36 @@ renderSummary = \case
   Node _ (LINK u t) ns -> fmtInternalLink (ms u) (text (ms t) : fmap renderSummary ns) 
   Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap renderSummary ns)
   _ -> span_ [] []
+
+-------------------------------------------------------------------------------
+-- pretty printer
+-------------------------------------------------------------------------------
+
+renderPretty :: Node -> View m a
+renderPretty = \case
+  Node _ DOCUMENT ns -> pretty "DOCUMENT" ns
+  Node _ (HEADING x) ns -> pretty (ms $ "HEADING " <> show x) ns
+  Node _ PARAGRAPH ns -> pretty "PARAGRAPH" ns
+  Node _ (LINK u t) ns -> pretty (ms $ "LINK " <> show u <> " " <> show t) ns
+  Node _ (IMAGE u t) ns -> pretty (ms $ "IMAGE " <> show u <> " " <> show t) ns
+  Node _ THEMATIC_BREAK ns -> pretty "THEMATIC_BREAK" ns
+  Node _ BLOCK_QUOTE ns -> pretty "BLOCK_QUOTE" ns
+  Node _ (HTML_BLOCK txt) ns -> pretty (ms $ "HTML_BLOCK " <> txt) ns
+  Node _ (CUSTOM_BLOCK _ _) ns -> pretty "CUSTOM_BLOCK" ns
+  Node _ (CODE_BLOCK info txt) ns -> pretty ( ms $ "CODE_BLOCK " <> info <> " " <> txt) ns
+  Node _ (LIST attrs) ns -> pretty (ms $ "LIST " <> show attrs) ns
+  Node _ ITEM ns -> pretty "ITEM" ns
+  Node _ (TEXT x) ns -> pretty (ms $ "TEXT " <> show x) ns
+  Node _ SOFTBREAK ns -> pretty "SOFTBREAK" ns
+  Node _ LINEBREAK ns -> pretty "LINEBREAK" ns
+  Node _ (HTML_INLINE txt) ns -> pretty (ms $ "HTML_INLINE " <> txt) ns
+  Node _ (CUSTOM_INLINE _ _) ns -> pretty "CUSTOM_INLINE" ns
+  Node _ (CODE txt) ns -> pretty (ms $ "CODE " <> show txt) ns
+  Node _ EMPH ns -> pretty "EMPH" ns
+  Node _ STRONG ns -> pretty "STRONG" ns
+  where
+    pretty :: MisoString -> [Node] -> View m a
+    pretty name ns = div_ [] [ text (name <> ":"), ul_ [] (map (\n -> li_ [] [renderPretty n]) ns) ]
 
 -------------------------------------------------------------------------------
 -- internal
