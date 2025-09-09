@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Helpers 
@@ -13,10 +12,8 @@ module Helpers
   , renderSummary
   ) where
 
-import Data.List (foldl')
-import Data.List.NonEmpty qualified as NE
-import Data.Text qualified as T
-import Miso
+-- TODO import Data.List (foldl')
+import Miso (MisoString, View, fromMisoString, ms, text)
 import Miso.Html.Element as H
 import Miso.Html.Property as P
 import Text.Megaparsec.Error (errorBundlePretty)
@@ -48,6 +45,7 @@ parseNodes fp str =
 
 getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
 getPreviousNext chapters current = go' chapters
+
   where
     go' = \case
       (x0:x1:x2:xs) -> if x0 == current
@@ -62,8 +60,8 @@ getPreviousNext chapters current = go' chapters
 
 getChapters :: [Node] -> [MisoString]
 getChapters = concatMap goNode
-  where
 
+  where
     goNode :: Node -> [MisoString]
     goNode = \case
       UnorderedList ns -> concatMap (concatMap goNode) ns
@@ -75,16 +73,16 @@ getChapters = concatMap goNode
     goInline :: Inline -> [MisoString]
     goInline = \case
       Link _ uri _ -> [ ms $ URI.render uri ]
-      _ -> []   -- TODO
+      _ -> []
 
 renderRaw :: [Node] -> View m a
 renderRaw ns = div_ [] $ map (\n -> div_ [] [ text (ms (show n)) ]) ns
 
 renderSummary :: Formatters m a -> [Node] -> View m a
-renderSummary Formatters{..} ns = 
-  div_ [] $ concatMap goNode ns   -- TODO concatMap -> map ?
+renderSummary Formatters{..} ns0 = 
+  div_ [] $ concatMap goNode ns0
+
   where
-    -- goNode :: Node -> [View m a]
     goNode = \case
       UnorderedList ns -> [ ul_ [] (concatMap (concatMap goNode) ns) ]
       OrderedList _ ns -> [ ol_ [] (concatMap (concatMap goNode) ns) ]
@@ -92,15 +90,17 @@ renderSummary Formatters{..} ns =
       Paragraph ns -> concatMap goInline ns
       _ -> []
       
-    -- goInline :: Inline -> [View m a]
     goInline = \case
+      Plain txt -> [ text (ms txt) ]
+      Image _ uri _ -> [ img_ [ src_ (ms $ URI.render uri) ] ]
       Link _ uri _ -> 
         let u = ms $ URI.render uri
         in [ li_ [] [ _fmtChapterLink u [ text u ] ] ]
-      _ -> []   -- TODO
+      _ -> []   -- TODO strong, emphasize...
 
 renderPage :: Formatters m a -> [MisoString] -> [Node] -> View m a
-renderPage Formatters{..} chapterLinks ns = 
+renderPage _ _ _ =
+-- renderPage Formatters{..} chapterLinks ns0 = 
   div_ [] []    -- TODO
 
 
@@ -152,33 +152,6 @@ renderPage fmt chapterLinks = go'
                     (Node _ SOFTBREAK _) -> False     -- TODO split on SOFTBREAK
                     _ -> True
       in p_ [] [ table_ [] ( map (\n -> tr_ [] [ td_ [] [go' n] ] ) ns1 ) ]
-
-renderPretty :: Node -> View m a
-renderPretty = \case
-  Node _ DOCUMENT ns -> pretty "DOCUMENT" ns
-  Node _ (HEADING x) ns -> pretty (ms $ "HEADING " <> show x) ns
-  Node _ PARAGRAPH ns -> pretty "PARAGRAPH" ns
-  Node _ (LINK u t) ns -> pretty (ms $ "LINK " <> show u <> " " <> show t) ns
-  Node _ (IMAGE u t) ns -> pretty (ms $ "IMAGE " <> show u <> " " <> show t) ns
-  Node _ THEMATIC_BREAK ns -> pretty "THEMATIC_BREAK" ns
-  Node _ BLOCK_QUOTE ns -> pretty "BLOCK_QUOTE" ns
-  Node _ (HTML_BLOCK txt) ns -> pretty (ms $ "HTML_BLOCK " <> txt) ns
-  Node _ (CUSTOM_BLOCK _ _) ns -> pretty "CUSTOM_BLOCK" ns
-  Node _ (CODE_BLOCK info txt) ns -> pretty ( ms $ "CODE_BLOCK " <> info <> " " <> txt) ns
-  Node _ (LIST attrs) ns -> pretty (ms $ "LIST " <> show attrs) ns
-  Node _ ITEM ns -> pretty "ITEM" ns
-  Node _ (TEXT x) ns -> pretty (ms $ "TEXT " <> show x) ns
-  Node _ SOFTBREAK ns -> pretty "SOFTBREAK" ns
-  Node _ LINEBREAK ns -> pretty "LINEBREAK" ns
-  Node _ (HTML_INLINE txt) ns -> pretty (ms $ "HTML_INLINE " <> txt) ns
-  Node _ (CUSTOM_INLINE _ _) ns -> pretty "CUSTOM_INLINE" ns
-  Node _ (CODE txt) ns -> pretty (ms $ "CODE " <> show txt) ns
-  Node _ EMPH ns -> pretty "EMPH" ns
-  Node _ STRONG ns -> pretty "STRONG" ns
-
-  where
-    pretty :: MisoString -> [Node] -> View m a
-    pretty name ns = div_ [] [ text name, ul_ [] (map (\n -> li_ [] [renderPretty n]) ns) ]
 
 -}
 

@@ -82,7 +82,7 @@ viewSummary Model{..} =
         , CSS.minWidth "300px"
         , CSS.maxWidth "300px" ]
         ]
-    [ h2_ [] [ "Summary" ]
+    [ h2_ [] [ "MisoDoc" ]
     , renderSummary formatters _modelSummary
     , viewDebug
     ]
@@ -121,12 +121,10 @@ viewPage m@Model{..} =
         else 
           [ hr_ []
           , p_ [] [ renderRaw _modelPage ]
-          , hr_ []
-          -- , p_ [] [ renderPretty _modelPage ]
           ]
 
 viewError :: Model -> View Model Action
-viewError m@Model{..} = 
+viewError Model{..} = 
   div_ [] 
       [ h2_ [] [ text errorType ]
       , pre_ 
