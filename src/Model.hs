@@ -8,8 +8,13 @@ import Miso.Lens.TH
 
 import Helpers
 
+data MyError
+  = FetchError MisoString MisoString
+  | ParseError MisoString
+  deriving (Eq)
+
 data Model = Model
-  { _modelError :: MisoString
+  { _modelError :: Maybe MyError
   , _modelChapters :: [MisoString]
   , _modelCurrent :: MisoString
   , _modelSummary :: [Node]
@@ -20,5 +25,5 @@ data Model = Model
 makeLenses ''Model
 
 mkModel :: Model
-mkModel = Model "" [] "" [] [] False
+mkModel = Model Nothing [] "" [] [] False
 

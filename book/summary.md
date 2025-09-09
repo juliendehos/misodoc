@@ -8,7 +8,9 @@
 
     2. [Invalid](invalid.md)
 
-    3. [Page 2b](page2b.md)
+    3. [Not found](not-found.md)
+
+    4. [Page 2b](page2b.md)
 
 - [Suffix chapter 1](suffix1.md)
 

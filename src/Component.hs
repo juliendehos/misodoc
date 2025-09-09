@@ -3,6 +3,7 @@
 
 module Component (mkComponent) where
 
+import Data.Maybe (isNothing)
 import Miso
 import Miso.CSS qualified as CSS
 import Miso.Lens
@@ -17,7 +18,7 @@ import Model
 -------------------------------------------------------------------------------
 
 data Action
-  = ActionError MisoString
+  = ActionFetchError MisoString MisoString
   | ActionAskPage MisoString
   | ActionSetPage MisoString MisoString
   | ActionAskSummary MisoString
@@ -30,29 +31,29 @@ data Action
 
 updateModel :: Action -> Transition Model Action
 
-updateModel (ActionError str) =
-  modelError .= str
+updateModel (ActionFetchError fp str) =
+  modelError ?= FetchError fp str
 
 updateModel (ActionAskPage fp) =
-  getText fp [] (ActionSetPage fp) ActionError
+  getText fp [] (ActionSetPage fp) (ActionFetchError fp)
 
 updateModel (ActionSetPage fp str) = do
+  modelCurrent .= fp
   case parseNodes fp str of
-    Left err -> modelError .= err
+    Left err -> modelError ?= ParseError err
     Right ns -> do
-      modelCurrent .= fp
       modelPage .= ns
-      modelError .= ""
+      modelError .= Nothing
 
 updateModel (ActionAskSummary fp) =
-  getText fp [] (ActionSetSummary fp) ActionError
+  getText fp [] (ActionSetSummary fp) (ActionFetchError fp)
 
 updateModel (ActionSetSummary fp str) = do
   case parseNodes fp str of
-    Left err -> modelError .= err
+    Left err -> modelError ?= ParseError err
     Right ns -> do
       modelSummary .= ns
-      modelError .= ""
+      modelError .= Nothing
       case getChapters ns of
         [] -> pure ()
         chapters@(c:_) -> do
@@ -67,10 +68,10 @@ updateModel ActionSwitchDebug =
 -------------------------------------------------------------------------------
 
 viewModel :: Model -> View Model Action
-viewModel m =
+viewModel m@Model{..} =
   div_ [ CSS.style_ [ CSS.display "flex", CSS.flexDirection "row" ] ]
     [ viewSummary m
-    , viewPage m
+    , if isNothing _modelError then viewPage m else viewError m
     ]
 
 viewSummary :: Model -> View Model Action
@@ -84,7 +85,6 @@ viewSummary Model{..} =
     (
       [ h2_ [] [ "Summary" ]
       -- , renderSummary formatters _modelSummary
-      , p_ [] [ text _modelError ]
       ] ++ fmtDebug
     )
   where
@@ -108,34 +108,55 @@ viewSummary Model{..} =
           ]
 
 viewPage :: Model -> View Model Action
-viewPage Model{..} = 
+viewPage m@Model{..} = 
   div_ [] 
-    (
-      [ viewNav
-      -- , renderPage formatters _modelChapters _modelPage
-      ] ++ viewRaw
-    )
-  where
-    viewNav = case getPreviousNext _modelChapters _modelCurrent of
-      (Just prev, Just next) -> 
-        p_ [] 
-          [ fmtChapterLink formatters prev ["previous"]
-          , " - "
-          , fmtChapterLink formatters next ["next"]
-          ]
-      (Nothing, Just next) -> p_ [] [ "previous - ", fmtChapterLink formatters next ["next"] ]
-      (Just prev, Nothing) -> p_ [] [ fmtChapterLink formatters prev ["previous"], " - next" ]
-      _ -> div_ [] []
+    [ viewNav m
+    -- , renderPage formatters _modelChapters _modelPage
+    , viewRaw m
+    ]
 
-    viewRaw
-      | null _modelPage = []
-      | _modelDebug = 
-          [ hr_ []
-          , p_ [] [ renderRaw _modelPage ]
-          , hr_ []
-          -- , p_ [] [ renderPretty _modelPage ]
+viewError :: Model -> View Model Action
+viewError m@Model{..} = 
+  div_ [] 
+      [ h2_ [] [ text errorType ]
+      , pre_ 
+          [ CSS.style_ 
+              [ CSS.backgroundColor CSS.lightpink
+              , CSS.padding "20px"
+              , CSS.border "1px solid black"
+              ]
           ]
-      | otherwise = []
+          [ text errorMsg ]
+      ]
+  where
+    (errorType, errorMsg) = case _modelError of
+      Just (FetchError fp msg) -> ("Fetch error (" <> fp <> ")", msg)
+      Just (ParseError msg) -> ("Parse error", msg)
+      Nothing -> ("no error", "no error")
+
+viewRaw :: Model -> View Model Action
+viewRaw Model{..} = 
+  div_ [] $ if not _modelDebug || null _modelPage 
+    then
+      []
+    else 
+      [ hr_ []
+      , p_ [] [ renderRaw _modelPage ]
+      , hr_ []
+      -- , p_ [] [ renderPretty _modelPage ]
+      ]
+
+viewNav :: Model -> View Model Action
+viewNav Model{..} = case getPreviousNext _modelChapters _modelCurrent of
+  (Just prev, Just next) -> 
+    p_ [] 
+      [ fmtChapterLink formatters prev ["previous"]
+      , " - "
+      , fmtChapterLink formatters next ["next"]
+      ]
+  (Nothing, Just next) -> p_ [] [ "previous - ", fmtChapterLink formatters next ["next"] ]
+  (Just prev, Nothing) -> p_ [] [ fmtChapterLink formatters prev ["previous"], " - next" ]
+  _ -> div_ [] []
 
 formatters :: Formatters Model Action
 formatters = Formatters
