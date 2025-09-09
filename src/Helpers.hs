@@ -8,8 +8,7 @@ module Helpers
   , getPreviousNext
   , Node
   , parseNodes
-  -- , renderPage
-  -- , renderPretty
+  , renderPage
   , renderRaw
   , renderSummary
   ) where
@@ -100,27 +99,10 @@ renderSummary Formatters{..} ns =
         in [ li_ [] [ _fmtChapterLink u [ text u ] ] ]
       _ -> []   -- TODO
 
+renderPage :: Formatters m a -> [MisoString] -> [Node] -> View m a
+renderPage Formatters{..} chapterLinks ns = 
+  div_ [] []    -- TODO
 
-{-
-
-renderSummary fmt = go'
-  where
-    go' = \case
-      Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
-      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
-      Node _ PARAGRAPH ns -> span_ [] (fmap go' ns)
-      Node _ ITEM ns -> li_ [] (fmap go' ns)
-      Node _ (LINK u t) ns -> fmtChapterLink fmt (ms u) (text (ms t) : fmap go' ns)
-      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
-      _ -> span_ [] []
-
-
-
-renderPretty :: [Node] -> View m a
-renderPretty = \case
-  Node _ DOCUMENT ns -> pretty "DOCUMENT" ns
- 
--}
 
 {-
 
@@ -199,9 +181,5 @@ renderPretty = \case
     pretty name ns = div_ [] [ text name, ul_ [] (map (\n -> li_ [] [renderPretty n]) ns) ]
 
 -}
-
--------------------------------------------------------------------------------
--- internal
--------------------------------------------------------------------------------
 
 

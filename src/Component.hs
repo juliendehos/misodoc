@@ -82,14 +82,13 @@ viewSummary Model{..} =
         , CSS.minWidth "300px"
         , CSS.maxWidth "300px" ]
         ]
-    (
-      [ h2_ [] [ "Summary" ]
-      , renderSummary formatters _modelSummary
-      ] ++ fmtDebug
-    )
+    [ h2_ [] [ "Summary" ]
+    , renderSummary formatters _modelSummary
+    , viewDebug
+    ]
   where
-    fmtDebug =
-      if _modelDebug
+    viewDebug = 
+      div_ [] $ if _modelDebug
         then
           [ p_ [] [ button_ 
                       [ onClick ActionSwitchDebug ] 
@@ -111,9 +110,20 @@ viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
   div_ [] 
     [ viewNav m
-    -- , renderPage formatters _modelChapters _modelPage
-    , viewRaw m
+    , renderPage formatters _modelChapters _modelPage
+    , viewDebug m
     ]
+  where
+    viewDebug Model{..} = 
+      div_ [] $ if not _modelDebug || null _modelPage 
+        then
+          []
+        else 
+          [ hr_ []
+          , p_ [] [ renderRaw _modelPage ]
+          , hr_ []
+          -- , p_ [] [ renderPretty _modelPage ]
+          ]
 
 viewError :: Model -> View Model Action
 viewError m@Model{..} = 
@@ -130,21 +140,9 @@ viewError m@Model{..} =
       ]
   where
     (errorType, errorMsg) = case _modelError of
-      Just (FetchError fp msg) -> ("Fetch error (" <> fp <> ")", msg)
+      Just (FetchError fp msg) -> ("Fetch error: " <> fp, msg)
       Just (ParseError msg) -> ("Parse error", msg)
       Nothing -> ("no error", "no error")
-
-viewRaw :: Model -> View Model Action
-viewRaw Model{..} = 
-  div_ [] $ if not _modelDebug || null _modelPage 
-    then
-      []
-    else 
-      [ hr_ []
-      , p_ [] [ renderRaw _modelPage ]
-      , hr_ []
-      -- , p_ [] [ renderPretty _modelPage ]
-      ]
 
 viewNav :: Model -> View Model Action
 viewNav Model{..} = case getPreviousNext _modelChapters _modelCurrent of
