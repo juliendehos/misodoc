@@ -84,8 +84,8 @@ renderSummary Formatters{..} ns0 =
 
   where
     goNode = \case
-      UnorderedList ns -> [ ul_ [] (concatMap (concatMap goNode) ns) ]
-      OrderedList _ ns -> [ ol_ [] (concatMap (concatMap goNode) ns) ]
+      UnorderedList ns -> [ ul_ [] (concatMap (map (li_ [] . goNode)) ns) ]
+      OrderedList _ ns -> [ ol_ [] (concatMap (map (li_ [] . goNode)) ns) ]
       Naked ns -> concatMap goInline ns
       Paragraph ns -> concatMap goInline ns
       _ -> []
@@ -95,13 +95,27 @@ renderSummary Formatters{..} ns0 =
       Image _ uri _ -> [ img_ [ src_ (ms $ URI.render uri) ] ]
       Link _ uri _ -> 
         let u = ms $ URI.render uri
-        in [ li_ [] [ _fmtChapterLink u [ text u ] ] ]
+        in [ _fmtChapterLink u [ text u ] ]
       _ -> []   -- TODO strong, emphasize...
 
 renderPage :: Formatters m a -> [MisoString] -> [Node] -> View m a
-renderPage _ _ _ =
--- renderPage Formatters{..} chapterLinks ns0 = 
-  div_ [] []    -- TODO
+renderPage Formatters{..} chapterLinks ns0 = 
+  div_ [] $ concatMap goNode ns0
+
+  where
+    goNode = \case
+      UnorderedList ns -> [ ul_ [] $ concatMap (concatMap goNode) ns ]
+      OrderedList _ ns -> [ ol_ [] $ concatMap (concatMap goNode) ns ]
+      Naked ns -> concatMap goInline ns
+      Paragraph ns -> [ p_ [] $ concatMap goInline ns ]
+      Heading1 ns -> [ h1_ [] $ concatMap goInline ns ]
+      _ -> []   -- TODO
+      
+    goInline = \case
+      Plain txt -> [ text (ms txt) ]
+      Image _ uri _ -> [ img_ [ src_ (ms $ URI.render uri) ] ]
+      _ -> []   -- TODO strong, emphasize...
+
 
 
 {-
