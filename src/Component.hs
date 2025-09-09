@@ -39,26 +39,28 @@ updateModel (ActionAskPage fp) =
 
 updateModel (ActionSetPage fp str) = do
   modelCurrent .= fp
-  case parseNodes fp str of
-    Left err -> modelError ?= ParseError err
-    Right ns -> do
-      modelPage .= ns
-      modelError .= Nothing
+  -- TODO
+  -- case parseNodes fp str of
+  --   Left err -> modelError ?= ParseError err
+  --   Right ns -> do
+  --     modelPage .= ns
+  --     modelError .= Nothing
 
 updateModel (ActionAskSummary fp) =
   getText fp [] (ActionSetSummary fp) (ActionFetchError fp)
 
 updateModel (ActionSetSummary fp str) = do
-  case parseNodes fp str of
+  case parseMD fp str of
     Left err -> modelError ?= ParseError err
     Right ns -> do
       modelSummary .= ns
       modelError .= Nothing
-      case getChapters ns of
-        [] -> pure ()
-        chapters@(c:_) -> do
-          modelChapters .= chapters
-          issue $ ActionAskPage c
+  -- TODO
+  --     case getChapters ns of
+  --       [] -> pure ()
+  --       chapters@(c:_) -> do
+  --         modelChapters .= chapters
+  --         issue $ ActionAskPage c
 
 updateModel ActionSwitchDebug =
   modelDebug %= not
@@ -83,7 +85,7 @@ viewSummary Model{..} =
         , CSS.maxWidth "300px" ]
         ]
     [ h2_ [] [ "MisoDoc" ]
-    , renderSummary formatters _modelSummary
+    -- TODO , renderSummary formatters _modelSummary
     , viewDebug
     ]
   where
@@ -110,7 +112,7 @@ viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
   div_ [] 
     [ viewNav m
-    , renderPage formatters _modelChapters _modelPage
+    -- TODO , renderPage formatters _modelChapters _modelPage
     , viewDebug m
     ]
   where
@@ -120,7 +122,7 @@ viewPage m@Model{..} =
           []
         else 
           [ hr_ []
-          , p_ [] [ renderRaw _modelPage ]
+          -- TODO , p_ [] [ renderRaw _modelPage ]
           ]
 
 viewError :: Model -> View Model Action
@@ -143,16 +145,18 @@ viewError Model{..} =
       Nothing -> ("no error", "no error")
 
 viewNav :: Model -> View Model Action
-viewNav Model{..} = case getPreviousNext _modelChapters _modelCurrent of
-  (Just prev, Just next) -> 
-    p_ [] 
-      [ _fmtChapterLink formatters prev ["previous"]
-      , " - "
-      , _fmtChapterLink formatters next ["next"]
-      ]
-  (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatters next ["next"] ]
-  (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatters prev ["previous"], " - next" ]
-  _ -> div_ [] []
+viewNav Model{..} = 
+  div_ [] [ "TODO" ]
+  -- case getPreviousNext _modelChapters _modelCurrent of
+  --   (Just prev, Just next) -> 
+  --     p_ [] 
+  --       [ _fmtChapterLink formatters prev ["previous"]
+  --       , " - "
+  --       , _fmtChapterLink formatters next ["next"]
+  --       ]
+  --   (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatters next ["next"] ]
+  --   (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatters prev ["previous"], " - next" ]
+  --   _ -> div_ [] []
 
 formatters :: Formatters Model Action
 formatters = Formatters

@@ -31,9 +31,8 @@ executable app
     Model
   build-depends:
     base,
-    megaparsec,
-    mmark,
-    modern-uri,
+    commonmark-simple,
     miso,
+    pandoc-types,
     text
 

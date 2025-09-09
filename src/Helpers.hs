@@ -3,32 +3,24 @@
 
 module Helpers 
   ( Formatters(..)
-  , getChapters
-  , getPreviousNext
-  , Node
-  , parseNodes
-  , renderPage
-  , renderRaw
-  , renderSummary
+  -- , getChapters
+  -- , getPreviousNext
+  , Block
+  , parseMD
+  -- , renderPage
+  -- , renderRaw
+  -- , renderSummary
   ) where
 
--- TODO import Data.List (foldl')
+import Commonmark.Simple
 import Miso (MisoString, View, fromMisoString, ms, text)
 import Miso.Html.Element as H
 import Miso.Html.Property as P
-import Text.Megaparsec.Error (errorBundlePretty)
-import Text.MMark -- (MMark(..), parse)
-import Text.MMark.Internal.Type
-import qualified Text.URI as URI
-
--- https://hackage.haskell.org/package/mmark-0.0.8.0/docs/Text-MMark-Extension.html#t:Block
--- https://hackage.haskell.org/package/mmark-0.0.8.0/docs/Text-MMark-Extension.html#t:Inline
+import Text.Pandoc.Definition
 
 -------------------------------------------------------------------------------
 -- export
 -------------------------------------------------------------------------------
-
-type Node = Bni
 
 data Formatters m a = Formatters
   { _fmtChapterLink :: MisoString -> [View m a] -> View m a
@@ -36,6 +28,15 @@ data Formatters m a = Formatters
   , _fmtBlockQuote :: [View m a] -> View m a
   , _fmtCodeBlock :: [View m a] -> View m a
   }
+
+
+parseMD :: MisoString -> MisoString -> Either MisoString [Block]
+parseMD fp str =
+  case parseMarkdown (fromMisoString fp) (fromMisoString str) of
+    Left err -> Left $ ms err
+    Right (Pandoc _ bs) -> Right bs
+
+{-
 
 parseNodes :: MisoString -> MisoString -> Either MisoString [Node]
 parseNodes fp str = 
@@ -116,6 +117,7 @@ renderPage Formatters{..} chapterLinks ns0 =
       Image _ uri _ -> [ img_ [ src_ (ms $ URI.render uri) ] ]
       _ -> []   -- TODO strong, emphasize...
 
+-}
 
 
 {-

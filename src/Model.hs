@@ -17,8 +17,8 @@ data Model = Model
   { _modelError :: Maybe MyError
   , _modelChapters :: [MisoString]
   , _modelCurrent :: MisoString
-  , _modelSummary :: [Node]
-  , _modelPage :: [Node]
+  , _modelSummary :: [Block]
+  , _modelPage :: [Block]
   , _modelDebug :: Bool
   } deriving (Eq)
 
