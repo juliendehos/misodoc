@@ -84,7 +84,7 @@ viewSummary Model{..} =
         ]
     (
       [ h2_ [] [ "Summary" ]
-      -- , renderSummary formatters _modelSummary
+      , renderSummary formatters _modelSummary
       ] ++ fmtDebug
     )
   where
@@ -150,17 +150,17 @@ viewNav :: Model -> View Model Action
 viewNav Model{..} = case getPreviousNext _modelChapters _modelCurrent of
   (Just prev, Just next) -> 
     p_ [] 
-      [ fmtChapterLink formatters prev ["previous"]
+      [ _fmtChapterLink formatters prev ["previous"]
       , " - "
-      , fmtChapterLink formatters next ["next"]
+      , _fmtChapterLink formatters next ["next"]
       ]
-  (Nothing, Just next) -> p_ [] [ "previous - ", fmtChapterLink formatters next ["next"] ]
-  (Just prev, Nothing) -> p_ [] [ fmtChapterLink formatters prev ["previous"], " - next" ]
+  (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatters next ["next"] ]
+  (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatters prev ["previous"], " - next" ]
   _ -> div_ [] []
 
 formatters :: Formatters Model Action
 formatters = Formatters
-  { fmtChapterLink = \u ns -> 
+  { _fmtChapterLink = \u ns -> 
       a_ 
         [ onClick (ActionAskPage (ms u))
         , CSS.style_ 
@@ -170,9 +170,9 @@ formatters = Formatters
           ]
         ]
       ns
-  , fmtInlineCode = \t ->
+  , _fmtInlineCode = \t ->
       span_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
-  , fmtBlockQuote = 
+  , _fmtBlockQuote = 
       pre_ 
         [ CSS.style_ 
           [ CSS.border "1px solid black"
@@ -180,7 +180,7 @@ formatters = Formatters
           , CSS.backgroundColor CSS.lightyellow
           ]
         ]
-  , fmtCodeBlock = 
+  , _fmtCodeBlock = 
       pre_ 
         [ CSS.style_ 
           [ CSS.border "1px solid black"

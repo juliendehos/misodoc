@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Helpers 
   ( Formatters(..)
@@ -10,7 +11,7 @@ module Helpers
   -- , renderPage
   -- , renderPretty
   , renderRaw
-  -- , renderSummary
+  , renderSummary
   ) where
 
 import Data.List (foldl')
@@ -34,10 +35,10 @@ import qualified Text.URI as URI
 type Node = Bni
 
 data Formatters m a = Formatters
-  { fmtChapterLink :: MisoString -> [View m a] -> View m a
-  , fmtInlineCode :: MisoString -> View m a
-  , fmtBlockQuote :: [View m a] -> View m a
-  , fmtCodeBlock :: [View m a] -> View m a
+  { _fmtChapterLink :: MisoString -> [View m a] -> View m a
+  , _fmtInlineCode :: MisoString -> View m a
+  , _fmtBlockQuote :: [View m a] -> View m a
+  , _fmtCodeBlock :: [View m a] -> View m a
   }
 
 parseNodes :: MisoString -> MisoString -> Either MisoString [Node]
@@ -45,9 +46,6 @@ parseNodes fp str =
   case parse (fromMisoString fp) (fromMisoString str) of
     Left bundle -> Left $ ms $ errorBundlePretty bundle
     Right ns -> Right $ mmarkBlocks ns
-
-renderRaw :: [Node] -> View m a
-renderRaw ns = div_ [] $ map (\n -> div_ [] [ text (ms (show n)) ]) ns
 
 getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
 getPreviousNext chapters current = go' chapters
@@ -80,8 +78,44 @@ getChapters = concatMap goNode
       Link _ uri _ -> [ ms $ URI.render uri ]
       _ -> []   -- TODO
 
+renderRaw :: [Node] -> View m a
+renderRaw ns = div_ [] $ map (\n -> div_ [] [ text (ms (show n)) ]) ns
+
+renderSummary :: Formatters m a -> [Node] -> View m a
+renderSummary Formatters{..} ns = 
+  div_ [] $ concatMap goNode ns   -- TODO concatMap -> map ?
+  where
+    -- goNode :: Node -> [View m a]
+    goNode = \case
+      UnorderedList ns -> [ ul_ [] (concatMap (concatMap goNode) ns) ]
+      OrderedList _ ns -> [ ol_ [] (concatMap (concatMap goNode) ns) ]
+      Naked ns -> concatMap goInline ns
+      Paragraph ns -> concatMap goInline ns
+      _ -> []
+      
+    -- goInline :: Inline -> [View m a]
+    goInline = \case
+      Link _ uri _ -> 
+        let u = ms $ URI.render uri
+        in [ li_ [] [ _fmtChapterLink u [ text u ] ] ]
+      _ -> []   -- TODO
+
 
 {-
+
+renderSummary fmt = go'
+  where
+    go' = \case
+      Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
+      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
+      Node _ PARAGRAPH ns -> span_ [] (fmap go' ns)
+      Node _ ITEM ns -> li_ [] (fmap go' ns)
+      Node _ (LINK u t) ns -> fmtChapterLink fmt (ms u) (text (ms t) : fmap go' ns)
+      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
+      _ -> span_ [] []
+
+
+
 renderPretty :: [Node] -> View m a
 renderPretty = \case
   Node _ DOCUMENT ns -> pretty "DOCUMENT" ns
@@ -137,23 +171,6 @@ renderPage fmt chapterLinks = go'
                     _ -> True
       in p_ [] [ table_ [] ( map (\n -> tr_ [] [ td_ [] [go' n] ] ) ns1 ) ]
 
-
-renderSummary :: Formatters m a -> Node -> View m a
-renderSummary fmt = go'
-  where
-    go' = \case
-      Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
-      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
-      Node _ PARAGRAPH ns -> span_ [] (fmap go' ns)
-      Node _ ITEM ns -> li_ [] (fmap go' ns)
-      Node _ (LINK u t) ns -> fmtChapterLink fmt (ms u) (text (ms t) : fmap go' ns)
-      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
-      _ -> span_ [] []
-
--------------------------------------------------------------------------------
--- pretty printer
--------------------------------------------------------------------------------
-
 renderPretty :: Node -> View m a
 renderPretty = \case
   Node _ DOCUMENT ns -> pretty "DOCUMENT" ns
@@ -181,24 +198,10 @@ renderPretty = \case
     pretty :: MisoString -> [Node] -> View m a
     pretty name ns = div_ [] [ text name, ul_ [] (map (\n -> li_ [] [renderPretty n]) ns) ]
 
+-}
+
 -------------------------------------------------------------------------------
 -- internal
 -------------------------------------------------------------------------------
-
-fmtH :: Level -> [Attribute action] -> [View model action] -> View model action
-fmtH = \case
-  1 -> h1_
-  2 -> h2_
-  3 -> h3_
-  4 -> h4_
-  5 -> h5_
-  _ -> h6_
-
-fmtListAttrs :: ListAttributes -> [Attribute action] -> [View model action] -> View model action
-fmtListAttrs attrs = case listType attrs of
-  BULLET_LIST -> ul_
-  ORDERED_LIST -> ol_
-
--}
 
 
