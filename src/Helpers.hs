@@ -1,15 +1,16 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Helpers 
   ( Formatters(..)
-  -- , getChapters
-  -- , getPreviousNext
+  , getChapters
+  , getPreviousNext
   , Block
   , parseMD
-  -- , renderPage
-  -- , renderRaw
-  -- , renderSummary
+  , renderPage
+  , renderRaw
+  , renderSummary
   ) where
 
 import Commonmark.Simple
@@ -17,6 +18,17 @@ import Miso (MisoString, View, fromMisoString, ms, text)
 import Miso.Html.Element as H
 import Miso.Html.Property as P
 import Text.Pandoc.Definition
+
+-- https://hackage-content.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Definition.html#t:Block
+-- https://hackage-content.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Definition.html#t:Inline
+-- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#InlineElement
+
+-- TODO parser errors
+
+-- TODO emoji
+-- TODO math
+-- TODO autolinks
+-- TODO task list
 
 -------------------------------------------------------------------------------
 -- export
@@ -26,9 +38,8 @@ data Formatters m a = Formatters
   { _fmtChapterLink :: MisoString -> [View m a] -> View m a
   , _fmtInlineCode :: MisoString -> View m a
   , _fmtBlockQuote :: [View m a] -> View m a
-  , _fmtCodeBlock :: [View m a] -> View m a
+  , _fmtCodeBlock :: MisoString -> View m a
   }
-
 
 parseMD :: MisoString -> MisoString -> Either MisoString [Block]
 parseMD fp str =
@@ -36,17 +47,11 @@ parseMD fp str =
     Left err -> Left $ ms err
     Right (Pandoc _ bs) -> Right bs
 
-{-
-
-parseNodes :: MisoString -> MisoString -> Either MisoString [Node]
-parseNodes fp str = 
-  case parse (fromMisoString fp) (fromMisoString str) of
-    Left bundle -> Left $ ms $ errorBundlePretty bundle
-    Right ns -> Right $ mmarkBlocks ns
+renderRaw :: [Block] -> View m a
+renderRaw ns = div_ [] $ map (\n -> div_ [] [ text (ms (show n)) ]) ns
 
 getPreviousNext :: [MisoString] -> MisoString -> (Maybe MisoString, Maybe MisoString)
 getPreviousNext chapters current = go' chapters
-
   where
     go' = \case
       (x0:x1:x2:xs) -> if x0 == current
@@ -59,116 +64,86 @@ getPreviousNext chapters current = go' chapters
         else (Nothing, Nothing)
       _ -> (Nothing, Nothing)
 
-getChapters :: [Node] -> [MisoString]
-getChapters = concatMap goNode
-
+getChapters :: [Block] -> [MisoString]
+getChapters = concatMap goBlock
   where
-    goNode :: Node -> [MisoString]
-    goNode = \case
-      UnorderedList ns -> concatMap (concatMap goNode) ns
-      OrderedList _ ns -> concatMap (concatMap goNode) ns
-      Naked ns -> concatMap goInline ns
-      Paragraph ns -> concatMap goInline ns
+    goBlock = \case
+      BulletList bss -> concatMap goBlock $ concat bss
+      OrderedList _ bss -> concatMap goBlock $ concat bss
+      Para is -> concatMap goInline is
       _ -> []
 
-    goInline :: Inline -> [MisoString]
     goInline = \case
-      Link _ uri _ -> [ ms $ URI.render uri ]
+      Link _ _ (url, _) -> [ms url]
       _ -> []
 
-renderRaw :: [Node] -> View m a
-renderRaw ns = div_ [] $ map (\n -> div_ [] [ text (ms (show n)) ]) ns
 
-renderSummary :: Formatters m a -> [Node] -> View m a
-renderSummary Formatters{..} ns0 = 
-  div_ [] $ concatMap goNode ns0
+mkItem :: Bool -> [View m a] -> [View m a]
+mkItem isList vs = if isList then [ li_ [] vs ] else vs
 
+renderSummary :: Formatters m a -> [Block] -> View m a
+renderSummary Formatters{..} bs0 = 
+  div_ [] $ concatMap (goBlock False) bs0
   where
-    goNode = \case
-      UnorderedList ns -> [ ul_ [] (concatMap (map (li_ [] . goNode)) ns) ]
-      OrderedList _ ns -> [ ol_ [] (concatMap (map (li_ [] . goNode)) ns) ]
-      Naked ns -> concatMap goInline ns
-      Paragraph ns -> concatMap goInline ns
+
+    goBlock isList = \case
+      BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
+      OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
+      Para is -> mkItem isList $ concatMap goInline is
       _ -> []
       
     goInline = \case
-      Plain txt -> [ text (ms txt) ]
-      Image _ uri _ -> [ img_ [ src_ (ms $ URI.render uri) ] ]
-      Link _ uri _ -> 
-        let u = ms $ URI.render uri
-        in [ _fmtChapterLink u [ text u ] ]
-      _ -> []   -- TODO strong, emphasize...
+      Str txt -> [ text (ms txt) ]
+      Emph is -> [ em_ [] (concatMap goInline is) ]
+      Strong is -> [ strong_ [] (concatMap goInline is) ]
+      Code _ txt -> [ code_ [] [ text (ms txt) ] ]
+      LineBreak -> [ br_ [] ]
+      Link _ is (url, _) -> [ _fmtChapterLink (ms url) (concatMap goInline is) ]
+      Image _ _ (url, _) -> [ img_ [ src_ (ms url) ] ]    -- TODO alt
+      Space -> [ " " ]
+      _ -> []
 
-renderPage :: Formatters m a -> [MisoString] -> [Node] -> View m a
-renderPage Formatters{..} chapterLinks ns0 = 
-  div_ [] $ concatMap goNode ns0
 
+renderPage :: Formatters m a -> [MisoString] -> [Block] -> View m a
+renderPage Formatters{..} chapterLinks bs0 = 
+  div_ [] $ concatMap (goBlock False) bs0
   where
-    goNode = \case
-      UnorderedList ns -> [ ul_ [] $ concatMap (concatMap goNode) ns ]
-      OrderedList _ ns -> [ ol_ [] $ concatMap (concatMap goNode) ns ]
-      Naked ns -> concatMap goInline ns
-      Paragraph ns -> [ p_ [] $ concatMap goInline ns ]
-      Heading1 ns -> [ h1_ [] $ concatMap goInline ns ]
-      _ -> []   -- TODO
+
+    goBlock isList = \case
+      BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
+      OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
+      Para is -> mkItem isList $ concatMap goInline is
+      Header l _ is -> [ fmtH l $ concatMap goInline is ]
+      HorizontalRule -> [ hr_ [] ]
+      BlockQuote bs -> [ _fmtBlockQuote $ concatMap (goBlock False) bs ]
+      CodeBlock _ txt -> [ _fmtCodeBlock (ms txt) ]
+      -- TODO Table
+      _ -> []
       
     goInline = \case
-      Plain txt -> [ text (ms txt) ]
-      Image _ uri _ -> [ img_ [ src_ (ms $ URI.render uri) ] ]
-      _ -> []   -- TODO strong, emphasize...
+      Str txt -> [ text (ms txt) ]
+      Emph is -> [ em_ [] (concatMap goInline is) ]
+      Strong is -> [ strong_ [] (concatMap goInline is) ]
+      Code _ txt -> [ _fmtInlineCode (ms txt) ]
+      LineBreak -> [ br_ [] ]
+      Link _ is (url, _) -> 
+        let urlStr = ms url
+            mkLink = 
+              if urlStr `elem` chapterLinks 
+              then _fmtChapterLink urlStr
+              else a_ [ href_ urlStr ]
+        in [ mkLink (concatMap goInline is) ]
+      Image _ _ (url, _) -> [ img_ [ src_ (ms url) ] ]    -- TODO alt
+      Space -> [ " " ]
+      _ -> []
 
--}
-
-
-{-
-
-renderPage :: Formatters m a -> [MisoString] -> Node -> View m a
-renderPage fmt chapterLinks = go'
-  where
-    go' = \case
-      Node _ DOCUMENT ns -> div_ [] (fmap go' ns)
-      Node _ THEMATIC_BREAK ns -> hr_ []
-      Node _ PARAGRAPH ns -> if isTable ns then fmtTable ns else div_ [] (fmap go' ns)
-      Node _ BLOCK_QUOTE ns -> fmtBlockQuote fmt (fmap go' ns)
-      Node _ (HTML_BLOCK txt) ns -> span_ [] [ "TODO HTML_BLOCK" ]
-      Node _ (CUSTOM_BLOCK onenter onexit) ns -> span_ [] (fmap go' ns)
-      Node _ (CODE_BLOCK _info txt) _ -> fmtCodeBlock fmt [ text (ms txt) ]  -- TODO highlightjs ?
-      Node _ (HEADING x) ns -> fmtH x [] (fmap go' ns)
-      Node _ (LIST attrs) ns -> fmtListAttrs attrs [] (fmap go' ns)
-      Node _ ITEM ns -> li_ [] (fmap go' ns)
-      Node _ (TEXT x) ns -> span_ [] (text (ms x) : fmap go' ns)
-      Node _ SOFTBREAK ns -> span_ [] [ "TODO SOFTBREAK" ]
-      Node _ LINEBREAK ns -> span_ [] [ "TODO LINEBREAK" ]
-      Node _ (HTML_INLINE txt) ns -> span_ [] [ "TODO HTML_INLINE" ]
-      Node _ (CUSTOM_INLINE onenter onexit) ns -> span_ [] [ "TODO CUSTOM_INLINE" ]
-      Node _ (CODE txt) _ -> (fmtInlineCode fmt (ms txt))
-      Node _ EMPH ns -> em_ [] (fmap go' ns)
-      Node _ STRONG ns -> strong_ [] (fmap go' ns)
-      Node _ (IMAGE u t) ns -> span_ [] (img_ [ src_ (ms u), alt_ (ms t) ] : fmap go' ns)
-      Node _ (LINK u t) ns -> 
-        let u' = ms u
-        in if u' `elem` chapterLinks
-          then fmtChapterLink fmt u' (text (ms t) : fmap (renderSummary fmt) ns) 
-          else a_ [ href_ u' ] (text (ms t) : fmap (renderSummary fmt) ns) 
-
-      Node _ STRIKETHROUGH _ -> div_ [] [ "TODO STRIKETHROUGH" ]
-      Node _ (TABLE _) _ -> div_ [] [ "TODO TABLE" ]
-      Node _ TABLE_ROW _ -> div_ [] [ "TODO ROW" ]
-      Node _ TABLE_CELL _ -> div_ [] [ "TODO CELL" ]
-      Node _ FOOTNOTE_REFERENCE _ -> div_ [] [ "TODO FOOTNOTE_REFERENCE" ]
-      Node _ FOOTNOTE_DEFINITION _ -> div_ [] [ "TODO FOOTNOTE_DEFINITION" ]
-
-    isTable = \case
-      (Node _ (TEXT x) _ : _) -> "|" `T.isPrefixOf` x
-      _ -> False
-
-    fmtTable ns0 = 
-      let ns1 = flip filter ns0 $ \case 
-                    (Node _ (TEXT x) _) -> not ("|-" `T.isPrefixOf` x)
-                    (Node _ SOFTBREAK _) -> False     -- TODO split on SOFTBREAK
-                    _ -> True
-      in p_ [] [ table_ [] ( map (\n -> tr_ [] [ td_ [] [go' n] ] ) ns1 ) ]
-
--}
-
+fmtH :: Int -> [View m a] -> View m a
+fmtH = \case
+  1 -> h1_ []
+  2 -> h2_ []
+  3 -> h3_ []
+  4 -> h4_ []
+  5 -> h5_ []
+  6 -> h6_ []
+  _ -> p_ []
 

@@ -39,12 +39,11 @@ updateModel (ActionAskPage fp) =
 
 updateModel (ActionSetPage fp str) = do
   modelCurrent .= fp
-  -- TODO
-  -- case parseNodes fp str of
-  --   Left err -> modelError ?= ParseError err
-  --   Right ns -> do
-  --     modelPage .= ns
-  --     modelError .= Nothing
+  case parseMD fp str of
+    Left err -> modelError ?= ParseError err
+    Right ns -> do
+      modelPage .= ns
+      modelError .= Nothing
 
 updateModel (ActionAskSummary fp) =
   getText fp [] (ActionSetSummary fp) (ActionFetchError fp)
@@ -55,12 +54,11 @@ updateModel (ActionSetSummary fp str) = do
     Right ns -> do
       modelSummary .= ns
       modelError .= Nothing
-  -- TODO
-  --     case getChapters ns of
-  --       [] -> pure ()
-  --       chapters@(c:_) -> do
-  --         modelChapters .= chapters
-  --         issue $ ActionAskPage c
+      case getChapters ns of
+        [] -> pure ()
+        chapters@(c:_) -> do
+          modelChapters .= chapters
+          issue $ ActionAskPage c
 
 updateModel ActionSwitchDebug =
   modelDebug %= not
@@ -85,7 +83,7 @@ viewSummary Model{..} =
         , CSS.maxWidth "300px" ]
         ]
     [ h2_ [] [ "MisoDoc" ]
-    -- TODO , renderSummary formatters _modelSummary
+    , renderSummary formatters _modelSummary
     , viewDebug
     ]
   where
@@ -112,7 +110,7 @@ viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
   div_ [] 
     [ viewNav m
-    -- TODO , renderPage formatters _modelChapters _modelPage
+    , renderPage formatters _modelChapters _modelPage
     , viewDebug m
     ]
   where
@@ -122,7 +120,7 @@ viewPage m@Model{..} =
           []
         else 
           [ hr_ []
-          -- TODO , p_ [] [ renderRaw _modelPage ]
+          , p_ [] [ renderRaw _modelPage ]
           ]
 
 viewError :: Model -> View Model Action
@@ -146,17 +144,16 @@ viewError Model{..} =
 
 viewNav :: Model -> View Model Action
 viewNav Model{..} = 
-  div_ [] [ "TODO" ]
-  -- case getPreviousNext _modelChapters _modelCurrent of
-  --   (Just prev, Just next) -> 
-  --     p_ [] 
-  --       [ _fmtChapterLink formatters prev ["previous"]
-  --       , " - "
-  --       , _fmtChapterLink formatters next ["next"]
-  --       ]
-  --   (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatters next ["next"] ]
-  --   (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatters prev ["previous"], " - next" ]
-  --   _ -> div_ [] []
+  case getPreviousNext _modelChapters _modelCurrent of
+    (Just prev, Just next) -> 
+      p_ [] 
+        [ _fmtChapterLink formatters prev ["previous"]
+        , " - "
+        , _fmtChapterLink formatters next ["next"]
+        ]
+    (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatters next ["next"] ]
+    (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatters prev ["previous"], " - next" ]
+    _ -> div_ [] []
 
 formatters :: Formatters Model Action
 formatters = Formatters
@@ -171,7 +168,7 @@ formatters = Formatters
         ]
       ns
   , _fmtInlineCode = \t ->
-      span_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
+      code_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
   , _fmtBlockQuote = 
       pre_ 
         [ CSS.style_ 
@@ -180,7 +177,7 @@ formatters = Formatters
           , CSS.backgroundColor CSS.lightyellow
           ]
         ]
-  , _fmtCodeBlock = 
+  , _fmtCodeBlock = \str ->
       pre_ 
         [ CSS.style_ 
           [ CSS.border "1px solid black"
@@ -188,6 +185,7 @@ formatters = Formatters
           , CSS.backgroundColor CSS.lightgrey
           ]
         ]
+        [ text str ]
   }
 
 -------------------------------------------------------------------------------
