@@ -85,7 +85,7 @@ renderNodes Formatter{..} chapterLinks bs0 =
       BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
       OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
       Plain is -> mkItem inList (concatMap goInline is)
-      Para is -> mkItem inList [ div_ [] $ concatMap goInline is ]
+      Para is -> mkItem inList [ p_ [] $ concatMap goInline is ]
       Header l _ is -> [ fmtH l $ concatMap goInline is ]
       HorizontalRule -> [ hr_ [] ]
       BlockQuote bs -> [ blockquote_ [] $ concatMap (goBlock False) bs ]

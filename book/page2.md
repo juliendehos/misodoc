@@ -24,6 +24,8 @@ text **strong** *italic*
 
 line 1
 
+line 1'
+
 ---
 
 line 2
@@ -42,7 +44,7 @@ mkComponent =
 
 ## block quote
 
-> foo <page1.md>
+> foo blou blah
 >  
 > baz `bq code` blou [link to page1](page1.md) blah
 > bar
