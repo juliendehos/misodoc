@@ -83,7 +83,7 @@ viewSummary Model{..} =
         , CSS.maxWidth "300px" ]
         ]
     [ h2_ [] [ "MisoDoc" ]
-    , renderSummary formatters _modelSummary
+    , renderNodes formatters _modelChapters _modelSummary
     , viewDebug
     ]
   where
@@ -110,7 +110,7 @@ viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
   div_ [] 
     [ viewNav m
-    , renderPage formatters _modelChapters _modelPage
+    , renderNodes formatters _modelChapters _modelPage
     , viewDebug m
     ]
   where
@@ -166,8 +166,6 @@ formatters = Formatters
           ]
         ]
       ns
-  , _fmtInlineCode = \t ->
-      span_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
   , _fmtBlockQuote = 
       pre_ 
         [ CSS.style_ 
