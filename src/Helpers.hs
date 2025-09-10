@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Helpers 
-  ( Formatters(..)
+  ( Formatter(..)
   , getChapters
   , getPreviousNext
   , Node
@@ -23,11 +23,10 @@ import Text.Pandoc.Definition
 -- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#line-106
 -- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#line-78
 
--- TODO parser errors
-
+-- TODO parse errors
 -- TODO math
--- TODO autolinks
--- TODO task list
+-- TODO table
+
 
 -------------------------------------------------------------------------------
 -- export
@@ -35,11 +34,8 @@ import Text.Pandoc.Definition
 
 type Node = Block
 
-data Formatters m a = Formatters
+newtype Formatter m a = Formatter
   { _fmtChapterLink :: MisoString -> [View m a] -> View m a
-  , _fmtInlineCode :: MisoString -> View m a    -- TODO
-  , _fmtBlockQuote :: [View m a] -> View m a    -- TODO
-  , _fmtCodeBlock :: MisoString -> View m a   -- TODO
   }
 
 parseNodes :: MisoString -> MisoString -> Either MisoString [Block]
@@ -80,21 +76,23 @@ getChapters = concatMap goBlock
 
 
 mkItem :: Bool -> [View m a] -> [View m a]
-mkItem isList vs = if isList then [ li_ [] vs ] else vs
+mkItem inList vs = if inList then [ li_ [] vs ] else vs
 
-renderNodes :: Formatters m a -> [MisoString] -> [Block] -> View m a
-renderNodes Formatters{..} chapterLinks bs0 = 
+renderNodes :: Formatter m a -> [MisoString] -> [Block] -> View m a
+renderNodes Formatter{..} chapterLinks bs0 = 
   div_ [] $ concatMap (goBlock False) bs0
   where
 
-    goBlock isList = \case
+    goBlock inList = \case
+      Plain is -> concatMap goInline is
       BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
       OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
-      Para is -> mkItem isList $ concatMap goInline is
+      Para is -> mkItem inList [ div_ [] $ concatMap goInline is ]
       Header l _ is -> [ fmtH l $ concatMap goInline is ]
       HorizontalRule -> [ hr_ [] ]
-      BlockQuote bs -> [ _fmtBlockQuote $ concatMap (goBlock False) bs ]
-      CodeBlock _ txt -> [ _fmtCodeBlock (ms txt) ]
+      BlockQuote bs -> [ blockquote_ [] $ concatMap (goBlock False) bs ]
+      CodeBlock _ txt ->    -- TODO language
+        [ pre_ [ class_ "codeblock" ] [ code_ [] [ text (ms txt) ] ] ]
       -- TODO Table
       _ -> []
       
@@ -102,7 +100,7 @@ renderNodes Formatters{..} chapterLinks bs0 =
       Str txt -> [ text (ms txt) ]
       Emph is -> [ em_ [] (concatMap goInline is) ]
       Strong is -> [ strong_ [] (concatMap goInline is) ]
-      Code _ txt -> [ _fmtInlineCode (ms txt) ]
+      Code _ txt -> [ code_ [] [ text (ms txt) ] ]
       LineBreak -> [ br_ [] ]
       Link _ is (url, _) -> 
         let urlStr = ms url

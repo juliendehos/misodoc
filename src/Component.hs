@@ -84,7 +84,7 @@ viewSummary Model{..} =
         , CSS.maxWidth "300px" ]
         ]
     [ h2_ [] [ "MisoDoc" ]
-    , renderNodes formatters _modelChapters _modelSummary
+    , renderNodes formatter _modelChapters _modelSummary
     , viewDebug
     ]
   where
@@ -111,7 +111,7 @@ viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
   div_ [] 
     [ viewNav m
-    , renderNodes formatters _modelChapters _modelPage
+    , renderNodes formatter _modelChapters _modelPage
     , viewDebug m
     ]
   where
@@ -148,16 +148,16 @@ viewNav Model{..} =
   case getPreviousNext _modelChapters _modelCurrent of
     (Just prev, Just next) -> 
       p_ [] 
-        [ _fmtChapterLink formatters prev ["previous"]
+        [ _fmtChapterLink formatter prev ["previous"]
         , " - "
-        , _fmtChapterLink formatters next ["next"]
+        , _fmtChapterLink formatter next ["next"]
         ]
-    (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatters next ["next"] ]
-    (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatters prev ["previous"], " - next" ]
+    (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatter next ["next"] ]
+    (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatter prev ["previous"], " - next" ]
     _ -> div_ [] []
 
-formatters :: Formatters Model Action
-formatters = Formatters
+formatter :: Formatter Model Action
+formatter = Formatter
   { _fmtChapterLink = \u ns -> 
       a_ 
         [ onClick (ActionAskPage (ms u))
@@ -168,27 +168,33 @@ formatters = Formatters
           ]
         ]
       ns
-  -- TODO
-  , _fmtInlineCode = \t ->
-      code_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
-  , _fmtBlockQuote = 
-      pre_ 
-        [ CSS.style_ 
-          [ CSS.border "1px solid black"
-          , CSS.padding "10px"
-          , CSS.backgroundColor CSS.lightyellow
-          ]
-        ]
-  , _fmtCodeBlock = \str ->
-      pre_ 
-        [ CSS.style_ 
-          [ CSS.border "1px solid black"
-          , CSS.padding "10px"
-          , CSS.backgroundColor CSS.lightgrey
-          ]
-        ]
-        [ text str ]
   }
+
+codeblockStyle :: CSS
+codeblockStyle = Sheet $ CSS.sheet_
+  [ CSS.selector_ "pre.codeblock"
+    [ CSS.border "1px solid black"
+    , CSS.padding "10px"
+    , CSS.backgroundColor CSS.lightgrey
+    ]
+  ]
+
+blockquoteStyle :: CSS
+blockquoteStyle = Sheet $ CSS.sheet_
+  [ CSS.selector_ "blockquote"
+    [ CSS.border "1px solid black"
+    , CSS.padding "10px"
+    , CSS.backgroundColor CSS.lightyellow
+    ]
+  ]
+
+tableStyle :: CSS
+tableStyle = Sheet $ CSS.sheet_
+  [ CSS.selector_ "table, th, td"
+    [ CSS.border "1px solid black"
+    -- , CSS.borderCollapse "collapse"    -- TODO
+    ]
+  ]
 
 -------------------------------------------------------------------------------
 -- component
@@ -197,5 +203,11 @@ formatters = Formatters
 mkComponent :: App Model Action
 mkComponent = 
   (component mkModel updateModel viewModel)
-    { initialAction = Just (ActionAskSummary "summary.md") }
+    { initialAction = Just (ActionAskSummary "summary.md")
+    , styles = 
+      [ codeblockStyle
+      , blockquoteStyle
+      , tableStyle
+      ]
+    }
 

@@ -42,8 +42,9 @@ mkComponent =
 
 ## block quote
 
-> foo
->
+> foo <page1.md>
+>  
+> baz `bq code` blou [link to page1](page1.md) blah
 > bar
 
 ## table
