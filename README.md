@@ -4,6 +4,14 @@ A Miso app that generates a documentation from MD files (inspired by
 [mdBook](https://rust-lang.github.io/mdBook/)).
 
 
+## TODO
+
+- documentation/example
+- math
+- code highlighting
+- parse errors
+
+
 ## setup
 
 - install Nix Flakes

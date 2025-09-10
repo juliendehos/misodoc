@@ -1,22 +1,16 @@
 
 # Suffix chapter 1
 
-
-## autolink
-
-<page1.md>
-
 ## math
 
-TODO
-
-$\sqrt(-1)$
+This is $\sqrt(-1)$
 
 $$\sqrt(-1)$$
 
 ## task list
 
-TODO
+- [ ] task 1
+- [x] task 2
 
 ## table
 

@@ -31,8 +31,9 @@ data Action
 
 updateModel :: Action -> Transition Model Action
 
-updateModel (ActionFetchError fp str) =
+updateModel (ActionFetchError fp str) = do
   modelError ?= FetchError fp str
+  modelCurrent .= ""
 
 updateModel (ActionAskPage fp) =
   getText fp [] (ActionSetPage fp) (ActionFetchError fp)
@@ -99,6 +100,8 @@ viewSummary Model{..} =
               , ul_ [] (fmap (\u -> li_ [] [ text u]) _modelChapters)
               , text ("current: " <> _modelCurrent)
               ]
+          , hr_ []
+          , p_ [] [ renderRaw _modelSummary ]
           ]
         else
           [ p_ [] [ button_ 
@@ -143,16 +146,17 @@ viewError Model{..} =
       Nothing -> ("no error", "no error")
 
 viewNav :: Model -> View Model Action
-viewNav Model{..} = case getPreviousNext _modelChapters _modelCurrent of
-  (Just prev, Just next) -> 
-    p_ [] 
-      [ _fmtChapterLink formatter prev ["previous"]
-      , " - "
-      , _fmtChapterLink formatter next ["next"]
-      ]
-  (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatter next ["next"] ]
-  (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatter prev ["previous"], " - next" ]
-  _ -> div_ [] []
+viewNav Model{..} = 
+  case getPreviousNext _modelChapters _modelCurrent of
+    (Just prev, Just next) -> 
+      p_ [] 
+        [ _fmtChapterLink formatter prev ["previous"]
+        , " - "
+        , _fmtChapterLink formatter next ["next"]
+        ]
+    (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatter next ["next"] ]
+    (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatter prev ["previous"], " - next" ]
+    _ -> div_ [] []
 
 formatter :: Formatter Model Action
 formatter = Formatter
@@ -191,6 +195,10 @@ tableStyle = Sheet $ CSS.sheet_
   [ CSS.selector_ "table, th, td"
     [ CSS.border "1px solid black"
     -- , CSS.borderCollapse "collapse"    -- TODO
+    ]
+  , CSS.selector_ "th, td"
+    [ CSS.paddingLeft "10px"
+    , CSS.paddingRight "10px"
     ]
   ]
 

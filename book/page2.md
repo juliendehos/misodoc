@@ -24,13 +24,12 @@ text **strong** *italic*
 
 line 1
 
-* * *
-
-line 2
+line 1'
 
 ---
 
-line 3
+line 2
+
 
 ## code 
 
@@ -45,10 +44,10 @@ mkComponent =
 
 ## block quote
 
-> foo <page1.md>
-  
-  baz `bq code` blou [link to page1](page1.md) blah
-  bar
+> foo blou blah
+>  
+> baz `bq code` blou [link to page1](page1.md) blah
+> bar
 
 ## table
 

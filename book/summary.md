@@ -3,8 +3,6 @@
 
 - [Prefix chapter 1](prefix1.md)
 
-- [Summary](summary.md)
-
 1. [Page 1](page1.md)
 
 2. [Page 2](page2.md)
