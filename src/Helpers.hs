@@ -18,13 +18,14 @@ import Miso.Html.Element as H
 import Miso.Html.Property as P
 import Text.Pandoc.Definition
 
+-------------------------------------------------------------------------------
+-- references
+-------------------------------------------------------------------------------
+
 -- https://hackage-content.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Definition.html#t:Block
 -- https://hackage-content.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Definition.html#t:Inline
 -- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#line-106
 -- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#line-78
-
--- TODO parse errors
--- TODO math
 
 -------------------------------------------------------------------------------
 -- export
@@ -66,6 +67,7 @@ getChapters = concatMap goBlock
       BulletList bss -> concatMap goBlock $ concat bss
       OrderedList _ bss -> concatMap goBlock $ concat bss
       Para is -> concatMap goInline is
+      Plain is -> concatMap goInline is
       _ -> []
 
     goInline = \case
@@ -81,80 +83,51 @@ renderNodes Formatter{..} chapterLinks bs0 =
   div_ [] $ concatMap (goBlock False) bs0
   where
 
+    fmtRows fRow fCell = 
+      concatMap (\(Row _ cells) -> 
+        [ fRow (concatMap (\(Cell _ _ _ _ bs) -> 
+          [ fCell (concatMap (goBlock False) bs) ]) cells) ])
+
     goBlock inList = \case
-      BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
-      OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
       Plain is -> mkItem inList (concatMap goInline is)
       Para is -> mkItem inList [ p_ [] $ concatMap goInline is ]
-      Header l _ is -> [ fmtH l $ concatMap goInline is ]
-      HorizontalRule -> [ hr_ [] ]
-      BlockQuote bs -> [ blockquote_ [] $ concatMap (goBlock False) bs ]
       CodeBlock _ txt ->    -- TODO language
         [ pre_ [ class_ "codeblock" ] [ code_ [] [ text (ms txt) ] ] ]
-
-      -- TODO refact table
+      -- TODO LineBlock
+      -- TODO RawBlock
+      BlockQuote bs -> [ blockquote_ [] $ concatMap (goBlock False) bs ]
+      OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
+      BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
+      -- TODO DefinitionList 
+      Header l _ is -> [ fmtH l $ concatMap goInline is ]
+      HorizontalRule -> [ hr_ [] ]
       Table _ _ _ (TableHead _ ths) tbs _ ->
         [ table_ [] 
-          ( concatMap 
-              (\(Row _ cells) -> 
-                [ tr_ [] 
-                  (concatMap 
-                    (\(Cell _ _ _ _ bs) -> 
-                      [ th_ [] 
-                        (concatMap (goBlock False) bs)
-                      ]) 
-                    cells) 
-                ])
-              ths
-          ++ concatMap 
-              (\(TableBody _ _ _ tds) ->
-                concatMap 
-                  (\(Row _ cells) -> 
-                    [ tr_ [] 
-                      (concatMap 
-                        (\(Cell _ _ _ _ bs) -> 
-                          [ td_ [] (concatMap (goBlock False) bs)
-                          ])
-                      cells) 
-                    ])
-                  tds)
-              tbs
+          (  fmtRows (tr_ []) (th_ []) ths
+          ++ concatMap (\(TableBody _ _ _ tds) -> 
+                fmtRows (tr_ []) (td_ []) tds) tbs
           )
         ]
+      -- TODO Figure
+      -- TODO Div
       _ -> []
-
-{-
-  Table 
-    ("",[],[])
-    (Caption Nothing [])
-    [(AlignDefault,ColWidthDefault),(AlignDefault,ColWidthDefault)]
-    (TableHead 
-      ("",[],[])
-      [Row 
-        ("",[],[]) 
-        [Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "foo"]]
-        ,Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "bar"]]]])
-    [TableBody 
-      ("",[],[]) 
-      (RowHeadColumns 0)
-      [] 
-      [Row 
-        ("",[],[])
-        [Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "baz"]]
-        ,Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "oof"]]]
-      ,Row 
-        ("",[],[])
-        [Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "zab"]]
-        ,Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "ooz"]]]]]
-    (TableFoot ("",[],[]) [])
--}
 
     goInline = \case
       Str txt -> [ text (ms txt) ]
       Emph is -> [ em_ [] (concatMap goInline is) ]
+      Underline is -> [ u_ [] (concatMap goInline is) ]
       Strong is -> [ strong_ [] (concatMap goInline is) ]
+      Superscript is -> [ sup_ [] (concatMap goInline is) ]
+      Subscript is -> [ sub_ [] (concatMap goInline is) ]
+      -- TODO SmallCaps
+      -- TODO Quoted
+      -- TODO Cite
       Code _ txt -> [ code_ [] [ text (ms txt) ] ]
+      Space -> [ " " ]
+      SoftBreak -> [ "\n" ]
       LineBreak -> [ br_ [] ]
+      Math _ txt -> [ span_ [] [ text ("TODO Math: " <> ms txt) ] ]   -- TODO
+      -- TODO RawInline
       Link _ is (url, _) -> 
         let urlStr = ms url
             mkLink = 
@@ -163,7 +136,8 @@ renderNodes Formatter{..} chapterLinks bs0 =
               else a_ [ href_ urlStr ]
         in [ mkLink (concatMap goInline is) ]
       Image _ _ (url, _) -> [ img_ [ src_ (ms url) ] ]    -- TODO alt
-      Space -> [ " " ]
+      -- TODO Note
+      -- TODO Span
       _ -> []
 
 fmtH :: Int -> [View m a] -> View m a

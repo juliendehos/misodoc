@@ -100,6 +100,8 @@ viewSummary Model{..} =
               , ul_ [] (fmap (\u -> li_ [] [ text u]) _modelChapters)
               , text ("current: " <> _modelCurrent)
               ]
+          , hr_ []
+          , p_ [] [ renderRaw _modelSummary ]
           ]
         else
           [ p_ [] [ button_ 
@@ -193,6 +195,10 @@ tableStyle = Sheet $ CSS.sheet_
   [ CSS.selector_ "table, th, td"
     [ CSS.border "1px solid black"
     -- , CSS.borderCollapse "collapse"    -- TODO
+    ]
+  , CSS.selector_ "th, td"
+    [ CSS.paddingLeft "10px"
+    , CSS.paddingRight "10px"
     ]
   ]
 

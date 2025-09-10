@@ -4,9 +4,7 @@
 
 ## math
 
-TODO
-
-$\sqrt(-1)$
+This is $\sqrt(-1)$
 
 $$\sqrt(-1)$$
 
