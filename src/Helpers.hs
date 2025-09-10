@@ -6,11 +6,10 @@ module Helpers
   ( Formatters(..)
   , getChapters
   , getPreviousNext
-  , Block
-  , parseMD
-  , renderPage
+  , Node
+  , parseNodes
+  , renderNodes
   , renderRaw
-  , renderSummary
   ) where
 
 import Commonmark.Simple
@@ -21,11 +20,11 @@ import Text.Pandoc.Definition
 
 -- https://hackage-content.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Definition.html#t:Block
 -- https://hackage-content.haskell.org/package/pandoc-types-1.23.1/docs/Text-Pandoc-Definition.html#t:Inline
--- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#InlineElement
+-- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#line-106
+-- https://hackage.haskell.org/package/commonmark-0.2.6.1/docs/src/Commonmark.Html.html#line-78
 
 -- TODO parser errors
 
--- TODO emoji
 -- TODO math
 -- TODO autolinks
 -- TODO task list
@@ -34,15 +33,17 @@ import Text.Pandoc.Definition
 -- export
 -------------------------------------------------------------------------------
 
+type Node = Block
+
 data Formatters m a = Formatters
   { _fmtChapterLink :: MisoString -> [View m a] -> View m a
-  , _fmtInlineCode :: MisoString -> View m a
-  , _fmtBlockQuote :: [View m a] -> View m a
-  , _fmtCodeBlock :: MisoString -> View m a
+  , _fmtInlineCode :: MisoString -> View m a    -- TODO
+  , _fmtBlockQuote :: [View m a] -> View m a    -- TODO
+  , _fmtCodeBlock :: MisoString -> View m a   -- TODO
   }
 
-parseMD :: MisoString -> MisoString -> Either MisoString [Block]
-parseMD fp str =
+parseNodes :: MisoString -> MisoString -> Either MisoString [Block]
+parseNodes fp str =
   case parseMarkdown (fromMisoString fp) (fromMisoString str) of
     Left err -> Left $ ms err
     Right (Pandoc _ bs) -> Right bs
@@ -81,31 +82,8 @@ getChapters = concatMap goBlock
 mkItem :: Bool -> [View m a] -> [View m a]
 mkItem isList vs = if isList then [ li_ [] vs ] else vs
 
-renderSummary :: Formatters m a -> [Block] -> View m a
-renderSummary Formatters{..} bs0 = 
-  div_ [] $ concatMap (goBlock False) bs0
-  where
-
-    goBlock isList = \case
-      BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
-      OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
-      Para is -> mkItem isList $ concatMap goInline is
-      _ -> []
-      
-    goInline = \case
-      Str txt -> [ text (ms txt) ]
-      Emph is -> [ em_ [] (concatMap goInline is) ]
-      Strong is -> [ strong_ [] (concatMap goInline is) ]
-      Code _ txt -> [ code_ [] [ text (ms txt) ] ]
-      LineBreak -> [ br_ [] ]
-      Link _ is (url, _) -> [ _fmtChapterLink (ms url) (concatMap goInline is) ]
-      Image _ _ (url, _) -> [ img_ [ src_ (ms url) ] ]    -- TODO alt
-      Space -> [ " " ]
-      _ -> []
-
-
-renderPage :: Formatters m a -> [MisoString] -> [Block] -> View m a
-renderPage Formatters{..} chapterLinks bs0 = 
+renderNodes :: Formatters m a -> [MisoString] -> [Block] -> View m a
+renderNodes Formatters{..} chapterLinks bs0 = 
   div_ [] $ concatMap (goBlock False) bs0
   where
 

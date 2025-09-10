@@ -31,15 +31,16 @@ data Action
 
 updateModel :: Action -> Transition Model Action
 
-updateModel (ActionFetchError fp str) =
+updateModel (ActionFetchError fp str) = do
   modelError ?= FetchError fp str
+  modelCurrent .= ""
 
 updateModel (ActionAskPage fp) =
   getText fp [] (ActionSetPage fp) (ActionFetchError fp)
 
 updateModel (ActionSetPage fp str) = do
   modelCurrent .= fp
-  case parseMD fp str of
+  case parseNodes fp str of
     Left err -> modelError ?= ParseError err
     Right ns -> do
       modelPage .= ns
@@ -49,7 +50,7 @@ updateModel (ActionAskSummary fp) =
   getText fp [] (ActionSetSummary fp) (ActionFetchError fp)
 
 updateModel (ActionSetSummary fp str) = do
-  case parseMD fp str of
+  case parseNodes fp str of
     Left err -> modelError ?= ParseError err
     Right ns -> do
       modelSummary .= ns
@@ -83,7 +84,7 @@ viewSummary Model{..} =
         , CSS.maxWidth "300px" ]
         ]
     [ h2_ [] [ "MisoDoc" ]
-    , renderSummary formatters _modelSummary
+    , renderNodes formatters _modelChapters _modelSummary
     , viewDebug
     ]
   where
@@ -110,7 +111,7 @@ viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
   div_ [] 
     [ viewNav m
-    , renderPage formatters _modelChapters _modelPage
+    , renderNodes formatters _modelChapters _modelPage
     , viewDebug m
     ]
   where
@@ -167,6 +168,7 @@ formatters = Formatters
           ]
         ]
       ns
+  -- TODO
   , _fmtInlineCode = \t ->
       code_ [ CSS.style_ [ CSS.backgroundColor CSS.lightgrey ] ] [ text t ]
   , _fmtBlockQuote = 
