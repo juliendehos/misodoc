@@ -137,6 +137,7 @@ renderNodes Formatter{..} chapterLinks bs0 =
         in [ mkLink (concatMap goInline is) ]
       Image _ _ (url, _) -> [ img_ [ src_ (ms url) ] ]    -- TODO alt
       -- TODO Note
+      Span _ is -> [ span_ [] (concatMap goInline is) ]
       -- TODO Span
       _ -> []
 
