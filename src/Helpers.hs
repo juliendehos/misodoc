@@ -1,8 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Helpers 
-  ( Formatters(..)
+  ( Formatter(..)
   , getChapters
   , getPreviousNext
   , Node
@@ -11,13 +12,14 @@ module Helpers
   , renderRaw
   ) where
 
+import Data.List.NonEmpty (NonEmpty((:|)))
 import Miso (MisoString, View, fromMisoString, ms, text)
 import Miso.Html.Element as H
 import Miso.Html.Property as P
 import Text.Megaparsec.Error (errorBundlePretty)
 import Text.MMark
 import Text.MMark.Internal.Type
-import qualified Text.URI as URI
+import Text.URI qualified as URI
 
 -- https://hackage.haskell.org/package/mmark-0.0.8.0/docs/Text-MMark-Extension.html#t:Block
 -- https://hackage.haskell.org/package/mmark-0.0.8.0/docs/Text-MMark-Extension.html#t:Inline
@@ -26,8 +28,6 @@ import qualified Text.URI as URI
 
 -- TODO math
 -- TODO code skylighting
--- TODO autolink
--- TODO emoji
 -- TODO task list
 
 -------------------------------------------------------------------------------
@@ -36,10 +36,10 @@ import qualified Text.URI as URI
 
 type Node = Bni
 
-data Formatters m a = Formatters
+newtype Formatter m a = Formatter
   { _fmtChapterLink :: MisoString -> [View m a] -> View m a
-  , _fmtBlockQuote :: [View m a] -> View m a
-  , _fmtCodeBlock :: [View m a] -> View m a
+  -- , _fmtBlockQuote :: [View m a] -> View m a
+  -- , _fmtCodeBlock :: [View m a] -> View m a
   }
 
 parseNodes :: MisoString -> MisoString -> Either MisoString [Node]
@@ -86,15 +86,15 @@ renderRaw bs = div_ [] $ map (\n -> div_ [] [ text (ms (show n)) ]) bs
 mkItem :: Bool -> [View m a] -> [View m a]
 mkItem inList vs = if inList then [ li_ [] vs ] else vs
 
-renderNodes :: Formatters m a -> [MisoString] -> [Node] -> View m a
-renderNodes Formatters{..} chapterLinks bs0 = 
+renderNodes :: Formatter m a -> [MisoString] -> [Node] -> View m a
+renderNodes Formatter{..} chapterLinks bs0 = 
   div_ [] $ concatMap (goBlock False) bs0
   where
 
     goBlock inList = \case
       UnorderedList bs -> [ ul_ [] (concatMap (concatMap (goBlock True)) bs) ]
       OrderedList _ bs -> [ ol_ [] (concatMap (concatMap (goBlock True)) bs) ]
-      Paragraph bs -> mkItem inList $ concatMap goInline bs
+      Paragraph bs -> mkItem inList [ div_ [] (concatMap goInline bs) ]
       Naked bs -> concatMap goInline bs
       ThematicBreak -> [ hr_ [] ]
       Heading1 bs -> [ h1_ [] (concatMap goInline bs) ]
@@ -103,10 +103,18 @@ renderNodes Formatters{..} chapterLinks bs0 =
       Heading4 bs -> [ h4_ [] (concatMap goInline bs) ]
       Heading5 bs -> [ h5_ [] (concatMap goInline bs) ]
       Heading6 bs -> [ h6_ [] (concatMap goInline bs) ]
-      -- CodeBlock
-      -- Blockquote
-      -- Table
-      _ -> []
+      CodeBlock info txt -> 
+        [ pre_ [ class_ "codeblock" ] [ code_ [] [ text (ms txt)] ] ]   -- TODO code
+      Blockquote bs -> [ blockquote_ [] (concatMap (goBlock False) bs) ]
+      Table cellalign (hs :| xss) -> 
+        [ table_ []
+            ( tr_ [] (concatMap (\x -> 
+                [ th_ [] (concatMap goInline x) ]) hs)
+            : concatMap (\xs -> 
+                [ tr_ [] (concatMap (\x -> 
+                  [ td_ [] (concatMap goInline x) ]) xs) ]) xss
+            )
+        ]
 
     goInline = \case
       Plain txt -> [ text (ms txt) ]
