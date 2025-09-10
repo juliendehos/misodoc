@@ -25,8 +25,6 @@ import Text.Pandoc.Definition
 
 -- TODO parse errors
 -- TODO math
--- TODO table
-
 
 -------------------------------------------------------------------------------
 -- export
@@ -84,18 +82,73 @@ renderNodes Formatter{..} chapterLinks bs0 =
   where
 
     goBlock inList = \case
-      Plain is -> concatMap goInline is
       BulletList bss -> [ ul_ [] (concatMap (concatMap (goBlock True)) bss) ]
       OrderedList _ bss -> [ ol_ [] (concatMap (concatMap (goBlock True)) bss) ]
+      Plain is -> mkItem inList (concatMap goInline is)
       Para is -> mkItem inList [ div_ [] $ concatMap goInline is ]
       Header l _ is -> [ fmtH l $ concatMap goInline is ]
       HorizontalRule -> [ hr_ [] ]
       BlockQuote bs -> [ blockquote_ [] $ concatMap (goBlock False) bs ]
       CodeBlock _ txt ->    -- TODO language
         [ pre_ [ class_ "codeblock" ] [ code_ [] [ text (ms txt) ] ] ]
-      -- TODO Table
+
+      -- TODO refact table
+      Table _ _ _ (TableHead _ ths) tbs _ ->
+        [ table_ [] 
+          ( concatMap 
+              (\(Row _ cells) -> 
+                [ tr_ [] 
+                  (concatMap 
+                    (\(Cell _ _ _ _ bs) -> 
+                      [ th_ [] 
+                        (concatMap (goBlock False) bs)
+                      ]) 
+                    cells) 
+                ])
+              ths
+          ++ concatMap 
+              (\(TableBody _ _ _ tds) ->
+                concatMap 
+                  (\(Row _ cells) -> 
+                    [ tr_ [] 
+                      (concatMap 
+                        (\(Cell _ _ _ _ bs) -> 
+                          [ td_ [] (concatMap (goBlock False) bs)
+                          ])
+                      cells) 
+                    ])
+                  tds)
+              tbs
+          )
+        ]
       _ -> []
-      
+
+{-
+  Table 
+    ("",[],[])
+    (Caption Nothing [])
+    [(AlignDefault,ColWidthDefault),(AlignDefault,ColWidthDefault)]
+    (TableHead 
+      ("",[],[])
+      [Row 
+        ("",[],[]) 
+        [Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "foo"]]
+        ,Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "bar"]]]])
+    [TableBody 
+      ("",[],[]) 
+      (RowHeadColumns 0)
+      [] 
+      [Row 
+        ("",[],[])
+        [Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "baz"]]
+        ,Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "oof"]]]
+      ,Row 
+        ("",[],[])
+        [Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "zab"]]
+        ,Cell ("",[],[]) AlignDefault (RowSpan 1) (ColSpan 1) [Plain [Str "ooz"]]]]]
+    (TableFoot ("",[],[]) [])
+-}
+
     goInline = \case
       Str txt -> [ text (ms txt) ]
       Emph is -> [ em_ [] (concatMap goInline is) ]
