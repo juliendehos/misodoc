@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" >
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" ></script>
+
+  </head>
+  <body>
+
+    <h2>my math</h2>
+
+    <p id="mymath"></p>
+
+    <script lang="javascript">
+      let mymath = document.getElementById('mymath');
+      katex.render("c = \\pm\\sqrt{a^2 + b^2}", mymath, { throwOnError: false });
+    </script>
+
+    <p id="mymath2"> c = \pm\sqrt{a^2 + b^2} </p>
+
+    <script lang="javascript">
+      let mymath2 = document.getElementById('mymath2');
+      let eq2 = mymath2.innerHTML;
+      katex.render(eq2, mymath2, { throwOnError: false });
+    </script>
+
+  </body>
+</html>
+
+

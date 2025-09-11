@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+
+  </head>
+  <body>
+
+    <h2>my code</h2>
+
+    <pre id="mycode" ><code class="language-haskell">
+  main :: IO ()
+  main = do
+    print True
+    putStrLn "hello"
+    </code></pre>
+
+    <script lang="javascript">
+        let mycode = document.getElementById('mycode');
+        hljs.highlightElement(mycode);
+    </script>
+
+  </body>
+</html>
+
+
