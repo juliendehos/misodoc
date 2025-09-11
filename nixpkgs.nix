@@ -2,8 +2,8 @@
 let
 
   miso-src = fetchTarball {
-    url = https://github.com/dmjio/miso/archive/3c3c359af12d657cf78ace32db53b088b5b8b7a2.tar.gz;
-    sha256 = "sha256:0gyxc0ckvb4j6bm8k5kpfh34p76320cgl897ii78zz9y7yps9ziz";
+    url = https://github.com/dmjio/miso/archive/530445a2a6bca109e25a0fa25bb5cf97e498ef84.tar.gz;
+    sha256 = "sha256:0ipw2w9s4h4dgay1hnx0bjswc5k0lazl03zdwfzxqrjpgvd48wby";
     # should match cabal.project
   };
   
