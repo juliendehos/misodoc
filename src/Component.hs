@@ -18,39 +18,43 @@ import Model
 -------------------------------------------------------------------------------
 
 data Action
-  = ActionFetchError MisoString MisoString
+  = ActionFetchError MisoString (Response MisoString)
   | ActionAskPage MisoString
-  | ActionSetPage MisoString MisoString
+  | ActionSetPage MisoString (Response MisoString)
   | ActionAskSummary MisoString
-  | ActionSetSummary MisoString MisoString
+  | ActionSetSummary MisoString (Response MisoString)
   | ActionSwitchDebug
 
 -------------------------------------------------------------------------------
 -- update
 -------------------------------------------------------------------------------
 
+headerNoCache :: (MisoString, MisoString)
+headerNoCache = ("Cache-Control", "no-cache")
+
 updateModel :: Action -> Transition Model Action
 
-updateModel (ActionFetchError fp str) = do
-  modelError ?= FetchError fp str
+updateModel (ActionFetchError fp rep) = do
+  let msg = ms ("errorMessage: " <> show (errorMessage rep) <> "\nbody: " <> show (body rep))
+  modelError ?= FetchError fp msg
   modelCurrent .= ""
 
 updateModel (ActionAskPage fp) =
-  getText fp [] (ActionSetPage fp) (ActionFetchError fp)
+  getText fp [headerNoCache] (ActionSetPage fp) (ActionFetchError fp)
 
-updateModel (ActionSetPage fp str) = do
+updateModel (ActionSetPage fp rep) = do
   modelCurrent .= fp
-  case parseNodes fp str of
+  case parseNodes fp (body rep) of
     Left err -> modelError ?= ParseError err
     Right ns -> do
       modelPage .= ns
       modelError .= Nothing
 
 updateModel (ActionAskSummary fp) =
-  getText fp [] (ActionSetSummary fp) (ActionFetchError fp)
+  getText fp [headerNoCache] (ActionSetSummary fp) (ActionFetchError fp)
 
-updateModel (ActionSetSummary fp str) = do
-  case parseNodes fp str of
+updateModel (ActionSetSummary fp rep) = do
+  case parseNodes fp (body rep) of
     Left err -> modelError ?= ParseError err
     Right ns -> do
       modelSummary .= ns
@@ -194,7 +198,7 @@ tableStyle :: CSS
 tableStyle = Sheet $ CSS.sheet_
   [ CSS.selector_ "table, th, td"
     [ CSS.border "1px solid black"
-    -- , CSS.borderCollapse "collapse"    -- TODO
+    , CSS.borderCollapse "collapse"
     ]
   , CSS.selector_ "th, td"
     [ CSS.paddingLeft "10px"

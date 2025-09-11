@@ -31,6 +31,7 @@ executable app
     Model
   build-depends:
     base,
+    commonmark,
     commonmark-simple,
     miso,
     pandoc-types,
