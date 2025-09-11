@@ -3,6 +3,8 @@
 A Miso app that generates a documentation from MD files (inspired by
 [mdBook](https://rust-lang.github.io/mdBook/)).
 
+Use the [commonmark-hs](https://github.com/jgm/commonmark-hs) markdown implementation.
+
 
 ## TODO
 
