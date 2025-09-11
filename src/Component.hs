@@ -221,3 +221,6 @@ mkComponent =
       ]
     }
 
+-- <script src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" defer></script>
+
+
