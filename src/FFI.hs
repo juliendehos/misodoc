@@ -3,8 +3,7 @@ module FFI where
 
 import Control.Monad (void)
 import Language.Javascript.JSaddle
-
-import Action
+import Text.Pandoc.Definition (MathType(..))
 
 renderCode :: JSVal -> JSM ()
 renderCode domref =

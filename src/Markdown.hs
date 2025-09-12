@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -14,12 +15,9 @@ module Markdown
 
 import Commonmark.Simple
 import Miso (MisoString, View, fromMisoString, ms, text)
-import Miso.Event
 import Miso.Html.Element as H
 import Miso.Html.Property as P
 import Text.Pandoc.Definition
-
-import Action
 
 -------------------------------------------------------------------------------
 -- references
@@ -36,8 +34,10 @@ import Action
 
 type Node = Block
 
-newtype Formatter m a = Formatter
+data Formatter m a = Formatter
   { _fmtChapterLink :: MisoString -> [View m a] -> View m a
+  , _fmtCodeBlock :: MisoString -> [View m a] -> View m a
+  , _fmtMath :: MathType -> [View m a] -> View m a
   }
 
 parseNodes :: MisoString -> MisoString -> Either MisoString [Block]
@@ -82,7 +82,7 @@ getChapters = concatMap goBlock
 mkItem :: Bool -> [View m a] -> [View m a]
 mkItem inList vs = if inList then [ li_ [] vs ] else vs
 
-renderNodes :: Formatter m Action -> [MisoString] -> [Block] -> View m Action
+renderNodes :: Formatter m a -> [MisoString] -> [Block] -> View m a
 renderNodes Formatter{..} chapterLinks bs0 = 
   div_ [] $ concatMap (goBlock False) bs0
   where
@@ -95,11 +95,12 @@ renderNodes Formatter{..} chapterLinks bs0 =
     goBlock inList = \case
       Plain is -> mkItem inList (concatMap goInline is)
       Para is -> mkItem inList [ p_ [] $ concatMap goInline is ]
-      CodeBlock _ txt ->
-        [ pre_ 
-          [ class_ "codeblock", onCreatedWith_ ActionRenderCode ]
-          [ code_ [ class_ "language-haskell" ] [ text (ms txt) ] ] -- TODO
-        ]
+      CodeBlock (_, lang, _) txt ->
+        let langClass = 
+              case lang of
+                []    -> "nohighlight"
+                (l:_) -> "language-" <> ms l
+        in [ _fmtCodeBlock langClass [ text (ms txt) ] ]
       -- TODO LineBlock
       -- TODO RawBlock
       BlockQuote bs -> [ blockquote_ [] $ concatMap (goBlock False) bs ]
@@ -133,12 +134,7 @@ renderNodes Formatter{..} chapterLinks bs0 =
       Space -> [ " " ]
       SoftBreak -> [ "\n" ]
       LineBreak -> [ br_ [] ]
-      Math mathtype txt -> 
-        let mathNode =
-              case mathtype of
-                DisplayMath -> div_
-                InlineMath -> span_
-        in [ mathNode [ onCreatedWith_ (ActionRenderMath mathtype) ] [ text (ms txt) ] ]
+      Math mathType txt -> [ _fmtMath mathType [ text (ms txt) ] ]
       -- TODO RawInline
       Link _ is (url, _) -> 
         let urlStr = ms url

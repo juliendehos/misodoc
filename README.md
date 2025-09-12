@@ -9,7 +9,6 @@ Use the [commonmark-hs](https://github.com/jgm/commonmark-hs) markdown implement
 ## TODO
 
 - documentation/example
-- code highlighting: language
 
 
 ## setup
@@ -55,4 +54,10 @@ docker run --rm -it -p 3000:3000 misodoc:latest
 nix-shell
 code .
 ```
+
+
+## highlight.js
+
+custom build: <https://highlightjs.org/download>
+
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -9,11 +10,26 @@ import Miso.CSS qualified as CSS
 import Miso.Lens
 import Miso.Html.Element as H
 import Miso.Html.Event as E
+import Miso.Html.Property as P
+import Text.Pandoc.Definition (MathType)
 
-import Action
 import FFI
 import Markdown
 import Model
+
+-------------------------------------------------------------------------------
+-- action
+-------------------------------------------------------------------------------
+
+data Action
+  = ActionFetchError MisoString (Response MisoString)
+  | ActionAskPage MisoString
+  | ActionSetPage MisoString (Response MisoString)
+  | ActionAskSummary MisoString
+  | ActionSetSummary MisoString (Response MisoString)
+  | ActionSwitchDebug
+  | ActionRenderCode DOMRef
+  | ActionRenderMath MathType DOMRef
 
 -------------------------------------------------------------------------------
 -- update
@@ -170,6 +186,21 @@ formatter = Formatter
           ]
         ]
       ns
+  , _fmtCodeBlock = \langClass ns ->
+      pre_ 
+        [ class_ langClass
+        , onCreatedWith_ ActionRenderCode 
+        , CSS.style_
+            [ CSS.border "1px solid black"
+            , CSS.padding "10px"
+            , CSS.backgroundColor #EEEEEE
+            ]
+        ]
+        [ code_ [] ns ]
+  , _fmtMath = \mt ns ->
+      span_ 
+        [ onCreatedWith_ (ActionRenderMath mt) ]
+        ns
   }
 
 blockquoteStyle :: CSS
@@ -183,10 +214,10 @@ blockquoteStyle = Sheet $ CSS.sheet_
 
 codeblockStyle :: CSS
 codeblockStyle = Sheet $ CSS.sheet_
-  [ CSS.selector_ "pre.codeblock"
+  [ CSS.selector_ "pre"
     [ CSS.border "1px solid black"
     , CSS.padding "10px"
-    , CSS.backgroundColor CSS.lightgrey
+    , CSS.backgroundColor #EEEEEE
     ]
   ]
 
@@ -211,15 +242,17 @@ mkComponent =
   (component mkModel updateModel viewModel)
     { initialAction = Just (ActionAskSummary "summary.md")
     , styles = 
-      [ Href "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css"
-      , Href "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css"
+      [ Href "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css"
+      -- , Href "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css"
+      , Href "github.min.css"
       , blockquoteStyle
       , codeblockStyle
       , tableStyle
       ]
     , scripts = 
-        [ Src "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"
-        , Src "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"
+        [ Src "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"
+        -- , Src "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"
+        , Src "highlight.min.js"
         ]
     }
 
