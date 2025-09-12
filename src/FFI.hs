@@ -18,3 +18,6 @@ renderMath mathtype domref = do
   optsVal <- toJSVal opts
   void $ jsg "katex" # "render" $ [ eq, domref, optsVal ]
 
+scrollToTop :: JSM () 
+scrollToTop = void $ jsg "window" # "scrollTo" $ [0, 0::Int]
+

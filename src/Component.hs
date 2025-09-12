@@ -27,6 +27,7 @@ data Action
   | ActionSetPage MisoString (Response MisoString)
   | ActionAskSummary MisoString
   | ActionSetSummary MisoString (Response MisoString)
+  | ActionSwitchSummary
   | ActionSwitchDebug
   | ActionRenderCode DOMRef
   | ActionRenderMath MathType DOMRef
@@ -50,6 +51,7 @@ updateModel (ActionAskPage fp) =
 
 updateModel (ActionSetPage fp rep) = do
   modelCurrent .= fp
+  io_ scrollToTop
   case parseNodes fp (body rep) of
     Left err -> modelError ?= ParseError err
     Right ns -> do
@@ -71,8 +73,11 @@ updateModel (ActionSetSummary fp rep) = do
           modelChapters .= chapters
           issue $ ActionAskPage c
 
+updateModel ActionSwitchSummary =
+  modelShowSummary %= not
+
 updateModel ActionSwitchDebug =
-  modelDebug %= not
+  modelShowDebug %= not
 
 updateModel (ActionRenderCode domref) = 
   io_ (renderCode domref)
@@ -87,7 +92,7 @@ updateModel (ActionRenderMath mathtype domref) =
 viewModel :: Model -> View Model Action
 viewModel m@Model{..} =
   div_ [ CSS.style_ [ CSS.display "flex", CSS.flexDirection "row" ] ]
-    [ viewSummary m
+    [ if _modelShowSummary then viewSummary m else span_ [] []
     , if isNothing _modelError then viewPage m else viewError m
     ]
 
@@ -99,18 +104,14 @@ viewSummary Model{..} =
         , CSS.minWidth "220px"
         , CSS.maxWidth "220px" ]
         ]
-    [ h2_ [] [ "MisoDoc" ]
-    , renderNodes formatter _modelChapters _modelSummary
+    [ renderNodes formatter _modelChapters _modelSummary
     , viewDebug
     ]
   where
     viewDebug = 
-      div_ [] $ if _modelDebug
+      div_ [] $ if _modelShowDebug
         then
-          [ p_ [] [ button_ 
-                      [ onClick ActionSwitchDebug ] 
-                      [ "Hide Debug" ] ]
-          , hr_ []
+          [ hr_ []
           , p_ []
               [ "chapter links:"
               , ul_ [] (fmap (\u -> li_ [] [ text u]) _modelChapters)
@@ -119,28 +120,43 @@ viewSummary Model{..} =
           , hr_ []
           , p_ [] [ renderRaw _modelSummary ]
           ]
-        else
-          [ p_ [] [ button_ 
-                      [ onClick ActionSwitchDebug ] 
-                      [ "Show Debug" ] ]
-          ]
+        else []
 
 viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
   div_ [] 
-    [ viewNav m
+    [ viewTop
     , renderNodes formatter _modelChapters _modelPage
-    , viewDebug m
+    , hr_ []
+    , viewNav m
+    , viewDebug
     ]
   where
-    viewDebug Model{..} = 
-      div_ [] $ if not _modelDebug || null _modelPage 
+
+    viewDebug = 
+      div_ [] $ if _modelShowDebug && not (null _modelPage)
         then
-          []
-        else 
           [ hr_ []
           , p_ [] [ renderRaw _modelPage ]
           ]
+        else 
+          []
+
+    viewTop = 
+      div_ []
+        [ mkLink ActionSwitchSummary [ img_ [ src_ "icon-toc.jpg", height_ "20" ] ]
+        , " "
+        , mkLink ActionSwitchDebug [ img_ [ src_ "icon-bug.jpg", height_ "20" ] ]
+        , span_ 
+            [ CSS.style_ 
+              [ CSS.fontWeight "bold"
+              , CSS.fontSize "16pt"
+              , CSS.paddingLeft "10px"
+              ]
+            ]
+            [ text docTitle ]
+        , hr_ []
+        ]
 
 viewError :: Model -> View Model Action
 viewError Model{..} = 
@@ -177,15 +193,7 @@ viewNav Model{..} =
 formatter :: Formatter Model Action
 formatter = Formatter
   { _fmtChapterLink = \u ns -> 
-      a_ 
-        [ onClick (ActionAskPage (ms u))
-        , CSS.style_ 
-          [ CSS.textDecoration "underline blue"
-          , CSS.color CSS.blue
-          , CSS.cursor "pointer" 
-          ]
-        ]
-      ns
+      mkLink (ActionAskPage (ms u)) ns
   , _fmtCodeBlock = \langClass ns ->
       pre_ 
         [ class_ langClass
@@ -202,6 +210,17 @@ formatter = Formatter
         [ onCreatedWith_ (ActionRenderMath mt) ]
         ns
   }
+
+mkLink :: action -> [View model action] -> View model action
+mkLink action =
+  a_ 
+    [ onClick action
+    , CSS.style_ 
+      [ CSS.textDecoration "underline blue"
+      , CSS.color CSS.blue
+      , CSS.cursor "pointer" 
+      ]
+    ]
 
 blockquoteStyle :: CSS
 blockquoteStyle = Sheet $ CSS.sheet_
@@ -232,6 +251,9 @@ tableStyle = Sheet $ CSS.sheet_
     , CSS.paddingRight "10px"
     ]
   ]
+
+docTitle :: MisoString
+docTitle = "MisoDoc"
 
 -------------------------------------------------------------------------------
 -- component

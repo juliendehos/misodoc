@@ -19,11 +19,12 @@ data Model = Model
   , _modelCurrent :: MisoString
   , _modelSummary :: [Node]
   , _modelPage :: [Node]
-  , _modelDebug :: Bool
+  , _modelShowDebug :: Bool
+  , _modelShowSummary :: Bool
   } deriving (Eq)
 
 makeLenses ''Model
 
 mkModel :: Model
-mkModel = Model Nothing [] "" [] [] False
+mkModel = Model Nothing [] "" [] [] False True
 

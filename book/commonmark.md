@@ -36,5 +36,5 @@ horizontal rule:
 
 and images:
 
-![](velo.jpg)
+![](miso.png)
 
