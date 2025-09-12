@@ -1,7 +1,11 @@
 
-module Action where
+module Action 
+  ( Action(..)
+  , MathType(..)
+  ) where
 
 import Miso
+import Text.Pandoc.Definition
 
 data Action
   = ActionFetchError MisoString (Response MisoString)
@@ -11,5 +15,5 @@ data Action
   | ActionSetSummary MisoString (Response MisoString)
   | ActionSwitchDebug
   | ActionRenderCode DOMRef
-  | ActionRenderMath DOMRef
+  | ActionRenderMath MathType DOMRef
 

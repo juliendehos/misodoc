@@ -67,6 +67,7 @@ getPreviousNext chapters current = go' chapters
 getChapters :: [Block] -> [MisoString]
 getChapters = concatMap goBlock
   where
+
     goBlock = \case
       BulletList bss -> concatMap goBlock $ concat bss
       OrderedList _ bss -> concatMap goBlock $ concat bss
@@ -132,15 +133,12 @@ renderNodes Formatter{..} chapterLinks bs0 =
       Space -> [ " " ]
       SoftBreak -> [ "\n" ]
       LineBreak -> [ br_ [] ]
-      Math mathType txt -> 
+      Math mathtype txt -> 
         let mathNode =
-              case mathType of
-                DisplayMath -> p_
+              case mathtype of
+                DisplayMath -> div_
                 InlineMath -> span_
-        in [ mathNode 
-              [ onCreatedWith_ ActionRenderMath, class_ "math" ]
-              [ text (ms txt) ]
-           ]
+        in [ mathNode [ onCreatedWith_ (ActionRenderMath mathtype) ] [ text (ms txt) ] ]
       -- TODO RawInline
       Link _ is (url, _) -> 
         let urlStr = ms url
@@ -152,7 +150,6 @@ renderNodes Formatter{..} chapterLinks bs0 =
       Image _ _ (url, _) -> [ img_ [ src_ (ms url) ] ]    -- TODO alt
       -- TODO Note
       Span _ is -> [ span_ [] (concatMap goInline is) ]
-      -- TODO Span
       _ -> []
 
 fmtH :: Int -> [View m a] -> View m a

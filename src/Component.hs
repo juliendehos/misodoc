@@ -61,8 +61,8 @@ updateModel ActionSwitchDebug =
 updateModel (ActionRenderCode domref) = 
   io_ (renderCode domref)
 
-updateModel (ActionRenderMath domref) =
-  io_ (renderMath domref)
+updateModel (ActionRenderMath mathtype domref) =
+  io_ (renderMath mathtype domref)
 
 -------------------------------------------------------------------------------
 -- view
@@ -190,16 +190,6 @@ codeblockStyle = Sheet $ CSS.sheet_
     ]
   ]
 
-mathStyle :: CSS
-mathStyle = Sheet $ CSS.sheet_
-  [ CSS.selector_ "span.math"
-    [
-    ]
-  , CSS.selector_ "p.math"
-    [ CSS.textAlign "center"
-    ]
-  ]
-
 tableStyle :: CSS
 tableStyle = Sheet $ CSS.sheet_
   [ CSS.selector_ "table, th, td"
@@ -225,7 +215,6 @@ mkComponent =
       , Href "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css"
       , blockquoteStyle
       , codeblockStyle
-      , mathStyle
       , tableStyle
       ]
     , scripts = 

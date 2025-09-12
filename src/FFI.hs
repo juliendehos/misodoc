@@ -4,12 +4,18 @@ module FFI where
 import Control.Monad (void)
 import Language.Javascript.JSaddle
 
+import Action
+
 renderCode :: JSVal -> JSM ()
 renderCode domref =
   void $ jsg "hljs" # "highlightElement" $ domref
 
-renderMath :: JSVal -> JSM ()
-renderMath domref = do
+renderMath :: MathType -> JSVal -> JSM ()
+renderMath mathtype domref = do
   eq <- domref ! "innerHTML"
-  void $ jsg "katex" # "render" $ [ eq, domref ]
+  opts <- create
+  opts <# "throwOnError" $ False
+  opts <# "displayMode" $ (mathtype == DisplayMath)
+  optsVal <- toJSVal opts
+  void $ jsg "katex" # "render" $ [ eq, domref, optsVal ]
 
