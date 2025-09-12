@@ -28,4 +28,4 @@ render, on the right side.
 You also have two links, at the top, to go to the previous/next page.
 
 On the bottom-left, there is a `Debug` button. You probably don't want to use
-it. You've be warned.
+it. You've been warned.
