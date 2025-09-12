@@ -95,9 +95,9 @@ viewSummary :: Model -> View Model Action
 viewSummary Model{..} = 
   div_ 
     [ CSS.style_ 
-        [ CSS.paddingRight "20px"
-        , CSS.minWidth "300px"
-        , CSS.maxWidth "300px" ]
+        [ CSS.paddingRight "10px"
+        , CSS.minWidth "220px"
+        , CSS.maxWidth "220px" ]
         ]
     [ h2_ [] [ "MisoDoc" ]
     , renderNodes formatter _modelChapters _modelSummary
