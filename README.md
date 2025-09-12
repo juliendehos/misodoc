@@ -9,7 +9,7 @@ Use the [commonmark-hs](https://github.com/jgm/commonmark-hs) markdown implement
 ## TODO
 
 - documentation/example
-- code highlighting: language, inline/block
+- code highlighting: language
 
 
 ## setup

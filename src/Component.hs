@@ -172,6 +172,15 @@ formatter = Formatter
       ns
   }
 
+blockquoteStyle :: CSS
+blockquoteStyle = Sheet $ CSS.sheet_
+  [ CSS.selector_ "blockquote"
+    [ CSS.border "1px solid black"
+    , CSS.padding "10px"
+    , CSS.backgroundColor CSS.lightyellow
+    ]
+  ]
+
 codeblockStyle :: CSS
 codeblockStyle = Sheet $ CSS.sheet_
   [ CSS.selector_ "pre.codeblock"
@@ -181,12 +190,13 @@ codeblockStyle = Sheet $ CSS.sheet_
     ]
   ]
 
-blockquoteStyle :: CSS
-blockquoteStyle = Sheet $ CSS.sheet_
-  [ CSS.selector_ "blockquote"
-    [ CSS.border "1px solid black"
-    , CSS.padding "10px"
-    , CSS.backgroundColor CSS.lightyellow
+mathStyle :: CSS
+mathStyle = Sheet $ CSS.sheet_
+  [ CSS.selector_ "span.math"
+    [
+    ]
+  , CSS.selector_ "p.math"
+    [ CSS.textAlign "center"
     ]
   ]
 
@@ -213,8 +223,9 @@ mkComponent =
     , styles = 
       [ Href "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css"
       , Href "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css"
-      , codeblockStyle
       , blockquoteStyle
+      , codeblockStyle
+      , mathStyle
       , tableStyle
       ]
     , scripts = 
@@ -222,5 +233,4 @@ mkComponent =
         , Src "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"
         ]
     }
-
 

@@ -132,11 +132,15 @@ renderNodes Formatter{..} chapterLinks bs0 =
       Space -> [ " " ]
       SoftBreak -> [ "\n" ]
       LineBreak -> [ br_ [] ]
-      Math _ txt -> 
-        [ span_ 
-            [ onCreatedWith_ ActionRenderMath ]
-            [ text (ms txt) ]
-        ]
+      Math mathType txt -> 
+        let mathNode =
+              case mathType of
+                DisplayMath -> p_
+                InlineMath -> span_
+        in [ mathNode 
+              [ onCreatedWith_ ActionRenderMath, class_ "math" ]
+              [ text (ms txt) ]
+           ]
       -- TODO RawInline
       Link _ is (url, _) -> 
         let urlStr = ms url
