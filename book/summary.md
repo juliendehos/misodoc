@@ -1,22 +1,13 @@
 
 ![](miso.png)
 
-- [Prefix chapter 1](prefix1.md)
+1. [Introduction](intro.md)
 
-1. [Page 1](page1.md)
+2. [Usage](usage.md)
 
-2. [Page 2](page2.md)
+3. Markdown features:
 
-    1. [Page 2a](page2a.md)
+    1. [CommonMark](commonmark.md)
 
-    2. [Invalid](invalid.md)
-
-    3. [Not found](not-found.md)
-
-    4. [Page 2b](page2b.md)
-
-- [Suffix chapter 1](suffix1.md)
-
-- [Suffix chapter 2](suffix2.md)
-
+    2. [Extensions](extensions.md)
 

@@ -6,11 +6,6 @@ A Miso app that generates a documentation from MD files (inspired by
 Use the [commonmark-hs](https://github.com/jgm/commonmark-hs) markdown implementation.
 
 
-## TODO
-
-- documentation/example
-
-
 ## setup
 
 - install Nix Flakes
