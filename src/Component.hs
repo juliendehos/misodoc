@@ -3,6 +3,7 @@
 
 module Component (mkComponent) where
 
+import Control.Monad (void)
 import Data.Maybe (isNothing)
 import Miso
 import Miso.CSS qualified as CSS
@@ -10,20 +11,11 @@ import Miso.Lens
 import Miso.Html.Element as H
 import Miso.Html.Event as E
 
+import Language.Javascript.JSaddle -- (jsg, (#))
+
+import Action
 import Helpers
 import Model
-
--------------------------------------------------------------------------------
--- Action
--------------------------------------------------------------------------------
-
-data Action
-  = ActionFetchError MisoString (Response MisoString)
-  | ActionAskPage MisoString
-  | ActionSetPage MisoString (Response MisoString)
-  | ActionAskSummary MisoString
-  | ActionSetSummary MisoString (Response MisoString)
-  | ActionSwitchDebug
 
 -------------------------------------------------------------------------------
 -- update
@@ -67,6 +59,14 @@ updateModel (ActionSetSummary fp rep) = do
 
 updateModel ActionSwitchDebug =
   modelDebug %= not
+
+updateModel (ActionRenderCode domref) = 
+  io_ ( void $ jsg ("hljs"::JSString) # ("highlightElement"::JSString) $ domref )
+
+updateModel (ActionRenderMath domref) =
+  io_ $ do
+    eq <- domref ! ("innerHTML" :: JSString)
+    void $ jsg ("katex"::JSString) # ("render"::JSString) $ [ eq, domref ]
 
 -------------------------------------------------------------------------------
 -- view
@@ -215,12 +215,16 @@ mkComponent =
   (component mkModel updateModel viewModel)
     { initialAction = Just (ActionAskSummary "summary.md")
     , styles = 
-      [ codeblockStyle
+      [ Href "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css"
+      , Href "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css"
+      , codeblockStyle
       , blockquoteStyle
       , tableStyle
       ]
+    , scripts = 
+        [ Src "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"
+        , Src "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"
+        ]
     }
-
--- <script src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" defer></script>
 
 

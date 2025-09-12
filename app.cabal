@@ -26,6 +26,7 @@ executable app
   main-is:
     Main.hs
   other-modules:
+    Action
     Component
     Helpers
     Model
@@ -33,6 +34,7 @@ executable app
     base,
     commonmark,
     commonmark-simple,
+    jsaddle,
     miso,
     pandoc-types,
     text

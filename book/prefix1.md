@@ -1,6 +1,15 @@
 
 # Prefix chapter 1
 
+
+```hs
+mkComponent :: App Model Action
+mkComponent = 
+  (component mkModel updateModel viewModel)
+    { initialAction = Just (ActionAskSummary "summary.md") }
+```
+
+
 :blush:
 
 :ramen:

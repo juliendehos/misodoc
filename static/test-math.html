@@ -12,19 +12,13 @@
 
     <h2>my math</h2>
 
-    <p id="mymath"></p>
+    <span id="mymath"> c = \pm\sqrt{a^2 + b^2} </span>
 
     <script lang="javascript">
       let mymath = document.getElementById('mymath');
-      katex.render("c = \\pm\\sqrt{a^2 + b^2}", mymath, { throwOnError: false });
-    </script>
-
-    <p id="mymath2"> c = \pm\sqrt{a^2 + b^2} </p>
-
-    <script lang="javascript">
-      let mymath2 = document.getElementById('mymath2');
-      let eq2 = mymath2.innerHTML;
-      katex.render(eq2, mymath2, { throwOnError: false });
+      let eq2 = mymath.innerHTML;
+      katex.render(eq2, mymath);
+      // katex.render(eq2, mymath, { throwOnError: false });
     </script>
 
   </body>

@@ -14,9 +14,12 @@ module Helpers
 
 import Commonmark.Simple
 import Miso (MisoString, View, fromMisoString, ms, text)
+import Miso.Event
 import Miso.Html.Element as H
 import Miso.Html.Property as P
 import Text.Pandoc.Definition
+
+import Action
 
 -------------------------------------------------------------------------------
 -- references
@@ -78,7 +81,7 @@ getChapters = concatMap goBlock
 mkItem :: Bool -> [View m a] -> [View m a]
 mkItem inList vs = if inList then [ li_ [] vs ] else vs
 
-renderNodes :: Formatter m a -> [MisoString] -> [Block] -> View m a
+renderNodes :: Formatter m Action -> [MisoString] -> [Block] -> View m Action
 renderNodes Formatter{..} chapterLinks bs0 = 
   div_ [] $ concatMap (goBlock False) bs0
   where
@@ -91,8 +94,11 @@ renderNodes Formatter{..} chapterLinks bs0 =
     goBlock inList = \case
       Plain is -> mkItem inList (concatMap goInline is)
       Para is -> mkItem inList [ p_ [] $ concatMap goInline is ]
-      CodeBlock _ txt ->    -- TODO language
-        [ pre_ [ class_ "codeblock" ] [ code_ [] [ text (ms txt) ] ] ]
+      CodeBlock _ txt ->
+        [ pre_ 
+          [ class_ "codeblock", onCreatedWith_ ActionRenderCode ]
+          [ code_ [ class_ "language-haskell" ] [ text (ms txt) ] ] -- TODO
+        ]
       -- TODO LineBlock
       -- TODO RawBlock
       BlockQuote bs -> [ blockquote_ [] $ concatMap (goBlock False) bs ]
@@ -126,7 +132,11 @@ renderNodes Formatter{..} chapterLinks bs0 =
       Space -> [ " " ]
       SoftBreak -> [ "\n" ]
       LineBreak -> [ br_ [] ]
-      Math _ txt -> [ span_ [] [ text ("TODO Math: " <> ms txt) ] ]   -- TODO
+      Math _ txt -> 
+        [ span_ 
+            [ onCreatedWith_ ActionRenderMath ]
+            [ text (ms txt) ]
+        ]
       -- TODO RawInline
       Link _ is (url, _) -> 
         let urlStr = ms url
