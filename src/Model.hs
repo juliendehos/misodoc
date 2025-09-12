@@ -6,7 +6,7 @@ import Miso
 import Miso.Lens
 import Miso.Lens.TH
 
-import Helpers
+import Markdown
 
 data MyError
   = FetchError MisoString MisoString

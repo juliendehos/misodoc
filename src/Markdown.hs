@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Helpers 
+module Markdown 
   ( Formatter(..)
   , getChapters
   , getPreviousNext

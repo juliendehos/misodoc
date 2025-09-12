@@ -9,9 +9,7 @@ Use the [commonmark-hs](https://github.com/jgm/commonmark-hs) markdown implement
 ## TODO
 
 - documentation/example
-- math
-- code highlighting
-- parse errors
+- code highlighting: language, inline/block
 
 
 ## setup

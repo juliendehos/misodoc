@@ -3,7 +3,6 @@
 
 module Component (mkComponent) where
 
-import Control.Monad (void)
 import Data.Maybe (isNothing)
 import Miso
 import Miso.CSS qualified as CSS
@@ -11,10 +10,9 @@ import Miso.Lens
 import Miso.Html.Element as H
 import Miso.Html.Event as E
 
-import Language.Javascript.JSaddle -- (jsg, (#))
-
 import Action
-import Helpers
+import FFI
+import Markdown
 import Model
 
 -------------------------------------------------------------------------------
@@ -61,12 +59,10 @@ updateModel ActionSwitchDebug =
   modelDebug %= not
 
 updateModel (ActionRenderCode domref) = 
-  io_ ( void $ jsg ("hljs"::JSString) # ("highlightElement"::JSString) $ domref )
+  io_ (renderCode domref)
 
 updateModel (ActionRenderMath domref) =
-  io_ $ do
-    eq <- domref ! ("innerHTML" :: JSString)
-    void $ jsg ("katex"::JSString) # ("render"::JSString) $ [ eq, domref ]
+  io_ (renderMath domref)
 
 -------------------------------------------------------------------------------
 -- view

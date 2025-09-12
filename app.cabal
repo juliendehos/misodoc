@@ -28,7 +28,8 @@ executable app
   other-modules:
     Action
     Component
-    Helpers
+    FFI
+    Markdown
     Model
   build-depends:
     base,
