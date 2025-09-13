@@ -129,7 +129,11 @@ viewSummary Model{..} =
 
 viewPage :: Model -> View Model Action
 viewPage m@Model{..} = 
-  div_ [] 
+  div_ 
+    [ CSS.style_ 
+        [ CSS.maxWidth "800px"
+        ]
+    ]
     [ viewTop
     , renderNodes formatter _modelChapters _modelPage
     , hr_ []
