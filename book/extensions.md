@@ -21,7 +21,7 @@ Some emoji markups [here](https://gist.github.com/rxaviers/7360908).
 | foo     | bar               |
 |---------|-------------------|
 | :ramen: | oof               |
-| zab     | [intro](intro.md) |
+| rab     | [intro](intro.md) |
 
 
 ## Task lists
@@ -62,7 +62,13 @@ MisoDoc can render math equations, using [KaTeX](https://katex.org/).
 
 If you write `$x = \sqrt{42}$`, you get $x = \sqrt{42}$.
 
-You also have the display mode, for example `$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$` gives:
+You also have the display mode, for example:
+
+```
+$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$
+```
+
+gives:
 
 $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$
 

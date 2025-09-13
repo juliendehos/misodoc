@@ -3,8 +3,8 @@
 
 MisoDoc supports the [CommonMark](https://commonmark.org/) specification.
 
-You have all you can expect from basic Markdown, like *italic*, **bold**,
-[links](intro.md).
+You have everything you would expect from basic Markdown, like *italic*,
+**bold**, [links](intro.md).
 
 - you
 - have
@@ -14,23 +14,23 @@ You have all you can expect from basic Markdown, like *italic*, **bold**,
 2. ordered lists
 3. too
 
-## heading 2
+## Heading 2
 
-### heading 3
+### Heading 3
 
 and so on
 
-> blockquote
+> blockquotes
 > 
 > because it's cool
 
 ```
-(code block
+(code blocks
     (because it's
         (what we write)))
 ```
 
-horizontal rule:
+horizontal rules:
 
 ---
 

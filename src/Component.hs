@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -31,6 +32,7 @@ data Action
   | ActionSwitchDebug
   | ActionRenderCode DOMRef
   | ActionRenderMath MathType DOMRef
+  | ActionScrollToTop
 
 -------------------------------------------------------------------------------
 -- update
@@ -84,6 +86,9 @@ updateModel (ActionRenderCode domref) =
 
 updateModel (ActionRenderMath mathtype domref) =
   io_ (renderMath mathtype domref)
+
+updateModel ActionScrollToTop =
+  io_ scrollToTop
 
 -------------------------------------------------------------------------------
 -- view
@@ -179,21 +184,25 @@ viewError Model{..} =
 
 viewNav :: Model -> View Model Action
 viewNav Model{..} = 
-  case getPreviousNext _modelChapters _modelCurrent of
-    (Just prev, Just next) -> 
-      p_ [] 
-        [ _fmtChapterLink formatter prev ["previous"]
-        , " - "
-        , _fmtChapterLink formatter next ["next"]
-        ]
-    (Nothing, Just next) -> p_ [] [ "previous - ", _fmtChapterLink formatter next ["next"] ]
-    (Just prev, Nothing) -> p_ [] [ _fmtChapterLink formatter prev ["previous"], " - next" ]
-    _ -> div_ [] []
+  p_ [] 
+    [ fmtImg "icon-left.jpg" "icon-left-ko.jpg" mPrev
+    , " "
+    , img_ [ src_ "icon-top.jpg", height_ "20", onClick ActionScrollToTop ]
+    , " "
+    , fmtImg "icon-right.jpg" "icon-right-ko.jpg" mNext
+    ]
+  where
+
+    (mPrev, mNext) = getPreviousNext _modelChapters _modelCurrent
+
+    fmtImg imgOk imgKo = \case
+      Nothing -> img_ [ src_ imgKo, height_ "20" ]
+      (Just x) -> img_ [ src_ imgOk, height_ "20", onClick (ActionAskPage x) ]
+
 
 formatter :: Formatter Model Action
 formatter = Formatter
-  { _fmtChapterLink = \u ns -> 
-      mkLink (ActionAskPage (ms u)) ns
+  { _fmtChapterLink = mkLink . ActionAskPage . ms
   , _fmtCodeBlock = \langClass ns ->
       pre_ 
         [ class_ langClass
@@ -231,12 +240,15 @@ blockquoteStyle = Sheet $ CSS.sheet_
     ]
   ]
 
-codeblockStyle :: CSS
-codeblockStyle = Sheet $ CSS.sheet_
+codeStyle :: CSS
+codeStyle = Sheet $ CSS.sheet_
   [ CSS.selector_ "pre"
     [ CSS.border "1px solid black"
     , CSS.padding "10px"
     , CSS.backgroundColor #EEEEEE
+    ]
+  , CSS.selector_ "code.inlinecode"
+    [ CSS.backgroundColor #EEEEEE
     ]
   ]
 
@@ -268,7 +280,7 @@ mkComponent =
       -- , Href "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css"
       , Href "github.min.css"
       , blockquoteStyle
-      , codeblockStyle
+      , codeStyle
       , tableStyle
       ]
     , scripts = 

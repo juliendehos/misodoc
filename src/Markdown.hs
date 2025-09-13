@@ -130,7 +130,7 @@ renderNodes Formatter{..} chapterLinks bs0 =
       -- TODO SmallCaps
       -- TODO Quoted
       -- TODO Cite
-      Code _ txt -> [ code_ [] [ text (ms txt) ] ]
+      Code _ txt -> [ code_ [ class_ "inlinecode" ] [ text (ms txt) ] ]
       Space -> [ " " ]
       SoftBreak -> [ "\n" ]
       LineBreak -> [ br_ [] ]
